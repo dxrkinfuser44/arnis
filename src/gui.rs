@@ -833,9 +833,9 @@ struct PerformanceConfigResponse {
 #[tauri::command]
 fn gui_get_performance_config() -> Result<PerformanceConfigResponse, String> {
     use crate::perf_config;
-    
+
     let config = perf_config::get_config();
-    
+
     Ok(PerformanceConfigResponse {
         logical_cpus: config.platform_info.logical_cpus,
         physical_cpus: config.platform_info.physical_cpus,
@@ -857,7 +857,7 @@ struct PerformanceConfigUpdate {
 #[tauri::command]
 fn gui_set_performance_config(update: PerformanceConfigUpdate) -> Result<(), String> {
     use crate::perf_config;
-    
+
     perf_config::update_config(|config| {
         if let Some(ram) = update.ram_gb {
             config.set_ram_override(ram);
@@ -869,6 +869,6 @@ fn gui_set_performance_config(update: PerformanceConfigUpdate) -> Result<(), Str
             config.set_simd_override(simd);
         }
     });
-    
+
     Ok(())
 }

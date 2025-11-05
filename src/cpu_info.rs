@@ -1,14 +1,14 @@
 /// Platform and SIMD detection module
 /// Detects CPU capabilities and architecture information
-
 use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
 pub enum SimdCapability {
     None,
-    Neon,      // ARM NEON
-    Avx2,      // x86 AVX2
-    Avx512,    // x86 AVX-512
+    Neon,   // ARM NEON
+    Avx2,   // x86 AVX2
+    Avx512, // x86 AVX-512
 }
 
 impl fmt::Display for SimdCapability {
@@ -38,7 +38,7 @@ impl PlatformInfo {
     pub fn detect() -> Self {
         let logical_cpus = num_cpus::get();
         let physical_cpus = num_cpus::get_physical();
-        
+
         // Get system memory
         let mut sys = sysinfo::System::new();
         sys.refresh_memory();
@@ -46,14 +46,14 @@ impl PlatformInfo {
         let total_memory_gb = total_memory_bytes as f64 / (1024.0 * 1024.0 * 1024.0);
         let available_memory_bytes = sys.available_memory();
         let available_memory_gb = available_memory_bytes as f64 / (1024.0 * 1024.0 * 1024.0);
-        
+
         // Detect SIMD capability
         let simd_capability = detect_simd_capability();
-        
+
         // Detect architecture and OS
         let architecture = std::env::consts::ARCH.to_string();
         let os_name = detect_os_name();
-        
+
         PlatformInfo {
             logical_cpus,
             physical_cpus,
@@ -75,13 +75,13 @@ fn detect_simd_capability() -> SimdCapability {
         {
             return SimdCapability::Neon;
         }
-        
+
         // Generic ARM64 - Check for NEON support
         #[cfg(all(target_arch = "aarch64", not(target_vendor = "apple")))]
         {
             return SimdCapability::Neon;
         }
-        
+
         // x86/x86_64 - Check for AVX512 and AVX2
         #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
         {
@@ -91,54 +91,55 @@ fn detect_simd_capability() -> SimdCapability {
                     return SimdCapability::Avx512;
                 }
             }
-            
+
             if is_x86_feature_detected!("avx2") {
                 return SimdCapability::Avx2;
             }
         }
     }
-    
+
     SimdCapability::None
 }
 
 /// Detect OS name and distribution
 fn detect_os_name() -> String {
     let os = std::env::consts::OS;
-    
+
     #[cfg(target_os = "linux")]
     {
         // Try to detect Linux distribution
         if let Ok(contents) = std::fs::read_to_string("/etc/os-release") {
             for line in contents.lines() {
                 if line.starts_with("PRETTY_NAME=") {
-                    let name = line.strip_prefix("PRETTY_NAME=")
+                    let name = line
+                        .strip_prefix("PRETTY_NAME=")
                         .unwrap_or(os)
                         .trim_matches('"');
-                    
+
                     // Log if running on performance-optimized distributions
                     if name.to_lowercase().contains("cachyos") {
                         log::info!("Detected CachyOS - Performance optimizations enabled");
                     } else if name.to_lowercase().contains("arch") {
                         log::info!("Detected Arch-based distribution");
                     }
-                    
+
                     return name.to_string();
                 }
             }
         }
     }
-    
+
     os.to_string()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_platform_detection() {
         let info = PlatformInfo::detect();
-        
+
         // Basic sanity checks
         assert!(info.logical_cpus > 0);
         assert!(info.physical_cpus > 0);
@@ -149,20 +150,23 @@ mod tests {
         assert!(!info.architecture.is_empty());
         assert!(!info.os_name.is_empty());
     }
-    
+
     #[test]
     fn test_simd_detection() {
         let capability = detect_simd_capability();
-        
+
         // Just verify it returns a valid value
         // The actual capability depends on the runtime platform
         match capability {
-            SimdCapability::None | SimdCapability::Neon | SimdCapability::Avx2 | SimdCapability::Avx512 => {
+            SimdCapability::None
+            | SimdCapability::Neon
+            | SimdCapability::Avx2
+            | SimdCapability::Avx512 => {
                 // All valid
             }
         }
     }
-    
+
     #[test]
     fn test_simd_display() {
         assert_eq!(format!("{}", SimdCapability::None), "None");

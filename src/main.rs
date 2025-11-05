@@ -49,7 +49,7 @@ fn run_cli() {
         eprintln!("Warning: Failed to initialize Rayon thread pool: {}", e);
     }
     perf.log_config();
-    
+
     let version: &str = env!("CARGO_PKG_VERSION");
     let repository: &str = env!("CARGO_PKG_REPOSITORY");
     println!(

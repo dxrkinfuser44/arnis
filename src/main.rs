@@ -5,12 +5,14 @@ mod block_definitions;
 mod bresenham;
 mod colors;
 mod coordinate_system;
+mod cpu_info;
 mod data_processing;
 mod element_processing;
 mod floodfill;
 mod ground;
 mod map_transformation;
 mod osm_parser;
+mod perf_config;
 #[cfg(feature = "gui")]
 mod progress;
 mod retrieve_data;
@@ -41,6 +43,13 @@ mod progress {
 use windows::Win32::System::Console::{AttachConsole, FreeConsole, ATTACH_PARENT_PROCESS};
 
 fn run_cli() {
+    // Initialize performance configuration and Rayon thread pool
+    let perf = perf_config::get_config();
+    if let Err(e) = perf.init_rayon_threadpool() {
+        eprintln!("Warning: Failed to initialize Rayon thread pool: {}", e);
+    }
+    perf.log_config();
+    
     let version: &str = env!("CARGO_PKG_VERSION");
     let repository: &str = env!("CARGO_PKG_REPOSITORY");
     println!(

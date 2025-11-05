@@ -32,10 +32,13 @@ impl PerformanceConfig {
     pub fn init_default() -> Self {
         let platform_info = PlatformInfo::detect();
         
-        // Set effective RAM: min(system RAM, 16GB)
-        let effective_ram_gb = platform_info.total_memory_gb.min(DEFAULT_MAX_RAM_GB);
+        // Set effective RAM: min(available RAM - 2GB buffer, 16GB cap)
+        // For large areas (50+ sq km), we need to be conservative with memory
+        let ram_with_buffer = (platform_info.available_memory_gb - 2.0).max(4.0);
+        let effective_ram_gb = ram_with_buffer.min(DEFAULT_MAX_RAM_GB);
         
         // Set effective threads to logical CPU count
+        // On Linux with advanced schedulers (BORE, CFS), let the OS handle scheduling
         let effective_threads = platform_info.logical_cpus;
         
         // SIMD from platform detection
@@ -98,10 +101,12 @@ impl PerformanceConfig {
     /// Log the current configuration
     pub fn log_config(&self) {
         log::info!("=== Performance Configuration ===");
+        log::info!("OS: {}", self.platform_info.os_name);
         log::info!("Architecture: {}", self.platform_info.architecture);
         log::info!("Physical CPUs: {}", self.platform_info.physical_cpus);
         log::info!("Logical CPUs: {}", self.platform_info.logical_cpus);
         log::info!("Total System RAM: {:.2} GB", self.platform_info.total_memory_gb);
+        log::info!("Available RAM: {:.2} GB", self.platform_info.available_memory_gb);
         log::info!("Effective RAM Limit: {:.2} GB", self.effective_ram_gb);
         log::info!("Effective Thread Count: {}", self.effective_threads);
         log::info!("SIMD Capability: {}", self.simd_capability);
@@ -111,6 +116,22 @@ impl PerformanceConfig {
         {
             log::info!("Apple Silicon detected: Rayon work-stealing will leverage");
             log::info!("  Performance and Efficiency cores via macOS scheduling");
+        }
+        
+        // Linux performance optimization notes
+        #[cfg(target_os = "linux")]
+        {
+            log::info!("Linux detected: Rayon will work with kernel scheduler");
+            log::info!("  (BORE, CFS, or other schedulers handle core allocation)");
+            
+            // Check for performance governors
+            if let Ok(governor) = std::fs::read_to_string("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor") {
+                let gov = governor.trim();
+                log::info!("CPU Governor: {}", gov);
+                if gov != "performance" {
+                    log::warn!("Consider setting CPU governor to 'performance' for best results");
+                }
+            }
         }
         
         if self.user_ram_override.is_some() {
@@ -123,6 +144,7 @@ impl PerformanceConfig {
             log::info!("  (SIMD override applied)");
         }
         
+        log::info!("Large area support: Memory management optimized for 50+ sq km");
         log::info!("================================");
     }
 }

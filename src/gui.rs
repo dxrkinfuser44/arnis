@@ -102,7 +102,9 @@ pub fn run_gui() {
             gui_select_world,
             gui_start_generation,
             gui_get_version,
-            gui_check_for_updates
+            gui_check_for_updates,
+            gui_get_performance_config,
+            gui_set_performance_config
         ])
         .setup(|app| {
             let app_handle = app.handle();
@@ -814,5 +816,59 @@ fn gui_start_generation(
         }
     });
 
+    Ok(())
+}
+
+#[derive(serde::Serialize)]
+struct PerformanceConfigResponse {
+    logical_cpus: usize,
+    physical_cpus: usize,
+    total_memory_gb: f64,
+    effective_ram_gb: f64,
+    effective_threads: usize,
+    simd_capability: String,
+    architecture: String,
+}
+
+#[tauri::command]
+fn gui_get_performance_config() -> Result<PerformanceConfigResponse, String> {
+    use crate::perf_config;
+    
+    let config = perf_config::get_config();
+    
+    Ok(PerformanceConfigResponse {
+        logical_cpus: config.platform_info.logical_cpus,
+        physical_cpus: config.platform_info.physical_cpus,
+        total_memory_gb: config.platform_info.total_memory_gb,
+        effective_ram_gb: config.effective_ram_gb,
+        effective_threads: config.effective_threads,
+        simd_capability: format!("{}", config.simd_capability),
+        architecture: config.platform_info.architecture.clone(),
+    })
+}
+
+#[derive(serde::Deserialize)]
+struct PerformanceConfigUpdate {
+    ram_gb: Option<f64>,
+    threads: Option<usize>,
+    simd_enabled: Option<bool>,
+}
+
+#[tauri::command]
+fn gui_set_performance_config(update: PerformanceConfigUpdate) -> Result<(), String> {
+    use crate::perf_config;
+    
+    perf_config::update_config(|config| {
+        if let Some(ram) = update.ram_gb {
+            config.set_ram_override(ram);
+        }
+        if let Some(threads) = update.threads {
+            config.set_threads_override(threads);
+        }
+        if let Some(simd) = update.simd_enabled {
+            config.set_simd_override(simd);
+        }
+    });
+    
     Ok(())
 }

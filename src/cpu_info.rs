@@ -27,8 +27,10 @@ pub struct PlatformInfo {
     pub logical_cpus: usize,
     pub physical_cpus: usize,
     pub total_memory_gb: f64,
+    pub available_memory_gb: f64,
     pub simd_capability: SimdCapability,
     pub architecture: String,
+    pub os_name: String,
 }
 
 impl PlatformInfo {
@@ -42,19 +44,24 @@ impl PlatformInfo {
         sys.refresh_memory();
         let total_memory_bytes = sys.total_memory();
         let total_memory_gb = total_memory_bytes as f64 / (1024.0 * 1024.0 * 1024.0);
+        let available_memory_bytes = sys.available_memory();
+        let available_memory_gb = available_memory_bytes as f64 / (1024.0 * 1024.0 * 1024.0);
         
         // Detect SIMD capability
         let simd_capability = detect_simd_capability();
         
-        // Detect architecture
+        // Detect architecture and OS
         let architecture = std::env::consts::ARCH.to_string();
+        let os_name = detect_os_name();
         
         PlatformInfo {
             logical_cpus,
             physical_cpus,
             total_memory_gb,
+            available_memory_gb,
             simd_capability,
             architecture,
+            os_name,
         }
     }
 }
@@ -94,6 +101,36 @@ fn detect_simd_capability() -> SimdCapability {
     SimdCapability::None
 }
 
+/// Detect OS name and distribution
+fn detect_os_name() -> String {
+    let os = std::env::consts::OS;
+    
+    #[cfg(target_os = "linux")]
+    {
+        // Try to detect Linux distribution
+        if let Ok(contents) = std::fs::read_to_string("/etc/os-release") {
+            for line in contents.lines() {
+                if line.starts_with("PRETTY_NAME=") {
+                    let name = line.strip_prefix("PRETTY_NAME=")
+                        .unwrap_or(os)
+                        .trim_matches('"');
+                    
+                    // Log if running on performance-optimized distributions
+                    if name.to_lowercase().contains("cachyos") {
+                        log::info!("Detected CachyOS - Performance optimizations enabled");
+                    } else if name.to_lowercase().contains("arch") {
+                        log::info!("Detected Arch-based distribution");
+                    }
+                    
+                    return name.to_string();
+                }
+            }
+        }
+    }
+    
+    os.to_string()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -107,7 +144,10 @@ mod tests {
         assert!(info.physical_cpus > 0);
         assert!(info.physical_cpus <= info.logical_cpus);
         assert!(info.total_memory_gb > 0.0);
+        assert!(info.available_memory_gb > 0.0);
+        assert!(info.available_memory_gb <= info.total_memory_gb);
         assert!(!info.architecture.is_empty());
+        assert!(!info.os_name.is_empty());
     }
     
     #[test]

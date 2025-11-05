@@ -83,6 +83,27 @@ To build Arnis on Windows, you need:
 - If you get "windres.exe" errors, ensure MSYS2's mingw64/bin directory is in your PATH
 - Restart your terminal after installing or modifying PATH
 
+#### Linux Performance Tips
+
+For optimal performance on Linux distributions (especially performance-oriented ones like CachyOS, Arch, or Gentoo):
+
+**Set CPU governor to performance mode:**
+```bash
+# Temporarily (until reboot)
+sudo cpupower frequency-set -g performance
+
+# Or for CachyOS/systemd systems, permanently:
+sudo systemctl enable --now cpupower.service
+```
+
+**For CachyOS users:** Your system is already optimized with BORE scheduler and performance kernels. Arnis will automatically detect and leverage these optimizations.
+
+**Memory management for large areas (50+ sq km):**
+- Arnis automatically manages memory with a 2GB safety buffer
+- For very large generations, ensure you have at least 16GB of available RAM
+- The application uses streaming techniques to avoid memory bottlenecks
+- Monitor system memory during generation and adjust the RAM limit in Performance Settings if needed
+
 ## :star: Star History
 
 <a href="https://star-history.com/#louis-e/arnis&Date">

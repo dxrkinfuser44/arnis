@@ -3,7 +3,7 @@
 use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[allow(dead_code)]
+#[allow(dead_code)] // Variants constructed at runtime based on platform
 pub enum SimdCapability {
     None,
     Neon,   // ARM NEON

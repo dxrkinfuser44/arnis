@@ -28,7 +28,6 @@ pub struct PerformanceConfig {
 
 impl PerformanceConfig {
     /// Initialize with default detection
-    #[allow(dead_code)]
     pub fn init_default() -> Self {
         let platform_info = PlatformInfo::detect();
 
@@ -56,7 +55,7 @@ impl PerformanceConfig {
     }
 
     /// Apply user overrides
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Used by GUI feature
     pub fn apply_overrides(&mut self) {
         if let Some(ram) = self.user_ram_override {
             self.effective_ram_gb = ram.min(self.platform_info.total_memory_gb);
@@ -73,21 +72,21 @@ impl PerformanceConfig {
     }
 
     /// Set user RAM override (in GB)
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Used by GUI feature
     pub fn set_ram_override(&mut self, ram_gb: f64) {
         self.user_ram_override = Some(ram_gb);
         self.apply_overrides();
     }
 
     /// Set user thread count override
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Used by GUI feature
     pub fn set_threads_override(&mut self, threads: usize) {
         self.user_threads_override = Some(threads);
         self.apply_overrides();
     }
 
     /// Set user SIMD override
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Used by GUI feature
     pub fn set_simd_override(&mut self, enabled: bool) {
         self.user_simd_override = Some(enabled);
         self.apply_overrides();
@@ -168,17 +167,22 @@ pub fn get_or_init() -> &'static Mutex<PerformanceConfig> {
 
 /// Get a copy of the current configuration
 pub fn get_config() -> PerformanceConfig {
-    get_or_init().lock().unwrap().clone()
+    get_or_init()
+        .lock()
+        .expect("Performance config mutex poisoned")
+        .clone()
 }
 
 /// Update the global configuration
-#[allow(dead_code)]
+#[allow(dead_code)] // Used by GUI feature
 pub fn update_config<F>(updater: F)
 where
     F: FnOnce(&mut PerformanceConfig),
 {
     let config_mutex = get_or_init();
-    let mut config = config_mutex.lock().unwrap();
+    let mut config = config_mutex
+        .lock()
+        .expect("Performance config mutex poisoned");
     updater(&mut config);
 }
 

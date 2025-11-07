@@ -39,6 +39,71 @@ GUI Build: ```cargo run```<br>
 
 After your pull request was merged, I will take care of regularly creating update releases which will include your changes.
 
+#### Apple Silicon & Native Builds
+For optimal performance on your specific CPU architecture, you can build with native optimizations:
+
+**Native CPU optimizations (recommended for best performance):**
+```bash
+RUSTFLAGS="-C target-cpu=native" cargo build --release --features simd-native
+```
+
+**macOS Universal Binary (for distribution):**
+```bash
+# Build for both Intel and Apple Silicon
+cargo build --release --target x86_64-apple-darwin
+cargo build --release --target aarch64-apple-darwin
+
+# Combine into universal binary
+lipo -create \
+  target/x86_64-apple-darwin/release/arnis \
+  target/aarch64-apple-darwin/release/arnis \
+  -output arnis-universal
+```
+
+The `simd-native` feature enables SIMD acceleration (NEON on Apple Silicon, AVX2/AVX-512 on x86). The application automatically detects your CPU capabilities and configures optimal performance settings.
+
+#### Windows Build Prerequisites
+To build Arnis on Windows, you need:
+
+1. **Visual Studio Build Tools** (or Visual Studio Community):
+   - Download from [https://visualstudio.microsoft.com/downloads/](https://visualstudio.microsoft.com/downloads/)
+   - During installation, select "Desktop development with C++"
+   - Ensure "Windows 10 SDK" or "Windows 11 SDK" is selected
+
+2. **MSYS2** (for some dependencies):
+   - Download from [https://www.msys2.org/](https://www.msys2.org/)
+   - After installation, open MSYS2 and run:
+     ```bash
+     pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-pkg-config
+     ```
+   - Add `C:\msys64\mingw64\bin` to your PATH environment variable
+
+**Troubleshooting:**
+- If you get "link.exe not found" errors, make sure Visual Studio Build Tools are installed with C++ support
+- If you get "windres.exe" errors, ensure MSYS2's mingw64/bin directory is in your PATH
+- Restart your terminal after installing or modifying PATH
+
+#### Linux Performance Tips
+
+For optimal performance on Linux distributions (especially performance-oriented ones like CachyOS, Arch, or Gentoo):
+
+**Set CPU governor to performance mode:**
+```bash
+# Temporarily (until reboot)
+sudo cpupower frequency-set -g performance
+
+# Or for CachyOS/systemd systems, permanently:
+sudo systemctl enable --now cpupower.service
+```
+
+**For CachyOS users:** Your system is already optimized with BORE scheduler and performance kernels. Arnis will automatically detect and leverage these optimizations.
+
+**Memory management for large areas (50+ sq km):**
+- Arnis automatically manages memory with a 2GB safety buffer
+- For very large generations, ensure you have at least 16GB of available RAM
+- The application uses streaming techniques to avoid memory bottlenecks
+- Monitor system memory during generation and adjust the RAM limit in Performance Settings if needed
+
 ## :star: Star History
 
 <a href="https://star-history.com/#louis-e/arnis&Date">

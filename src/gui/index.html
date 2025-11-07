@@ -144,6 +144,37 @@
           </div>
         </div>
 
+        <!-- Performance Settings Section -->
+        <div class="settings-row">
+          <h3 style="margin-top: 20px; margin-bottom: 10px;" data-localize="performance_settings">Performance Settings</h3>
+        </div>
+
+        <!-- Max RAM Slider -->
+        <div class="settings-row">
+          <label for="max-ram-slider" data-localize="max_ram">Max RAM (GB)</label>
+          <div class="settings-control">
+            <input type="range" id="max-ram-slider" name="max-ram-slider" min="2" max="32" step="0.5" value="16">
+            <span id="max-ram-value">Auto</span>
+          </div>
+        </div>
+
+        <!-- Thread Count Input -->
+        <div class="settings-row">
+          <label for="thread-count" data-localize="thread_count">Thread Count</label>
+          <div class="settings-control">
+            <input type="number" id="thread-count" name="thread-count" min="1" max="128" step="1" placeholder="Auto">
+            <button type="button" id="thread-auto-button" class="auto-button" onclick="resetThreadCount()">Auto</button>
+          </div>
+        </div>
+
+        <!-- CPU Optimizations Toggle -->
+        <div class="settings-row">
+          <label for="cpu-optimizations-toggle" data-localize="cpu_optimizations">CPU Optimizations (SIMD)</label>
+          <div class="settings-control">
+            <input type="checkbox" id="cpu-optimizations-toggle" name="cpu-optimizations-toggle" checked>
+          </div>
+        </div>
+
         <!-- Map Theme Selector -->
         <div class="settings-row">
           <label for="tile-theme-select" data-localize="map_theme">Map Theme</label>

@@ -36,21 +36,41 @@ You are a highly capable and autonomous agent, and you can definitely solve this
 
 # Workflow
 
-1. Fetch any URL's provided by the user using the `fetch` tool.
-2. Understand the problem deeply. Carefully read the issue and think critically about what is required. Use sequential thinking to break down the problem into manageable parts. Consider the following:
+## Context Management
+**CRITICAL**: Before starting any work, ALWAYS read `context.md` in the repository root to understand:
+- Current project state and structure
+- Recent changes and active development areas
+- Known issues and performance considerations
+- Build and test procedures
+
+After completing your work and before ending your session, ALWAYS update `context.md` with:
+- Summary of changes made
+- New issues discovered
+- Performance impacts (if measured)
+- Next steps or recommendations
+- Updated timestamp in "Last Updated" field
+
+Also review `copilot-instructions.md` for detailed coding guidelines specific to this project.
+
+## Standard Workflow
+
+1. **READ CONTEXT**: Start by reading `context.md` to understand current project state
+2. Fetch any URL's provided by the user using the `fetch` tool.
+3. Understand the problem deeply. Carefully read the issue and think critically about what is required. Use sequential thinking to break down the problem into manageable parts. Consider the following:
    - What is the expected behavior?
    - What are the edge cases?
    - What are the potential pitfalls?
    - How does this fit into the larger context of the codebase?
    - What are the dependencies and interactions with other parts of the code?
-3. Investigate the codebase. Explore relevant files, search for key functions, and gather context.
-4. Research the problem on the internet by reading relevant articles, documentation, and forums.
-5. Develop a clear, step-by-step plan. Break down the fix into manageable, incremental steps. Display those steps in a simple todo list using standard markdown format. Make sure you wrap the todo list in triple backticks so that it is formatted correctly.
-6. Implement the fix incrementally. Make small, testable code changes.
-7. Debug as needed. Use debugging techniques to isolate and resolve issues.
+4. Investigate the codebase. Explore relevant files, search for key functions, and gather context.
+5. Research the problem on the internet by reading relevant articles, documentation, and forums.
+6. Develop a clear, step-by-step plan. Break down the fix into manageable, incremental steps. Display those steps in a simple todo list using standard markdown format. Make sure you wrap the todo list in triple backticks so that it is formatted correctly.
+7. Implement the fix incrementally. Make small, testable code changes.
+8. Debug as needed. Use debugging techniques to isolate and resolve issues.
 8. Test frequently. Run tests after each change to verify correctness.
 9. Iterate until the root cause is fixed and all tests pass.
 10. Reflect and validate comprehensively. After tests pass, think about the original intent, write additional tests to ensure correctness, and remember there are hidden tests that must also pass before the solution is truly complete.
+11. **UPDATE CONTEXT**: Before ending your session, update `context.md` with your changes, findings, and recommendations.
 
 Refer to the detailed sections below for more information on each step.
 
@@ -98,6 +118,20 @@ Carefully read the issue and think hard about a plan to solve it before coding.
 - Use print statements, logs, or temporary code to inspect program state, including descriptive statements or error messages to understand what's happening
 - To test hypotheses, you can also add test statements or functions
 - Revisit your assumptions if unexpected behavior occurs.
+
+## 8. Session Completion (REQUIRED)
+Before ending your session, you MUST:
+1. Update `context.md` in the repository root with:
+   - Summary of changes made
+   - New issues discovered or resolved
+   - Performance impacts (if any)
+   - Recommendations for future work
+   - Updated "Last Updated" timestamp with current date
+2. Ensure all code is properly committed
+3. Verify tests pass
+4. Review your work against the original requirements
+
+Failure to update `context.md` at the end of your session means the next agent will not have the benefit of your work and discoveries.
 
 # How to create a Todo List
 Use the following format to create a todo list:

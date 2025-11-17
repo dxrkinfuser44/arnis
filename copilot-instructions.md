@@ -199,3 +199,145 @@ git push origin feature/description
 ---
 
 **Remember**: Always read `context.md` at the start and update it at the end of your session. This ensures continuity and effective collaboration across agent sessions.
+
+## Appendix: Detailed Examples
+
+### Example 1: Adding a New OSM Element Type
+
+**Scenario**: Adding support for OSM `leisure=park` elements.
+
+**Step-by-step**:
+```bash
+# 1. Create new module
+touch crates/arnis-core/src/element_processing/parks.rs
+
+# 2. Add basic structure
+# (See existing modules like water_areas.rs for template)
+
+# 3. Register in mod.rs
+echo "pub mod parks;" >> crates/arnis-core/src/element_processing/mod.rs
+
+# 4. Add to OSM parser priority system
+# Edit osm_parser.rs to include park handling
+
+# 5. Add tests
+# Add test functions in parks.rs or tests/ directory
+
+# 6. Test
+cargo test element_processing::parks
+cargo run --no-default-features -- --bbox="..." --path="..."
+
+# 7. Update context.md
+# Add to Recent Changes: "Added support for leisure=park OSM elements"
+```
+
+### Example 2: Performance Optimization
+
+**Scenario**: Reduce memory usage in building generation.
+
+**Investigation**:
+```bash
+# 1. Enable metrics
+cargo run --no-default-features --features metrics -- \
+  --bbox="..." --path="..." --metrics-out before.json
+
+# 2. Identify bottleneck
+# Review metrics, use profiler if needed
+
+# 3. Make targeted change
+# Example: Use iterators instead of collecting to Vec
+
+# 4. Measure improvement
+cargo run --no-default-features --features metrics -- \
+  --bbox="..." --path="..." --metrics-out after.json
+
+# 5. Compare results
+diff before.json after.json
+
+# 6. Update context.md
+# Performance Considerations: "Reduced building gen memory by 20%"
+```
+
+### Example 3: Cross-Platform Testing
+
+**Scenario**: Ensure a file path change works on all platforms.
+
+```rust
+// ❌ Bad - hardcoded separator
+let path = format!("{}/region/r.0.0.mca", world_path);
+
+// ✅ Good - using PathBuf
+let path = PathBuf::from(world_path)
+    .join("region")
+    .join("r.0.0.mca");
+```
+
+**Testing**:
+```bash
+# Test on current platform
+cargo test
+
+# Simulate path handling
+cargo test --test path_tests -- --nocapture
+
+# Update context.md if issues found on specific platforms
+```
+
+### Example 4: Context Update After Bug Fix
+
+**Before work - Read context.md**:
+```markdown
+### Known Issues
+- Coordinate transformation fails for southern hemisphere (#123)
+```
+
+**After fix - Update context.md**:
+```markdown
+### Recent Changes
+- Fixed coordinate transformation bug for southern hemisphere (issue #123)
+- Added test cases for both hemispheres in coordinate_system tests
+
+### Known Issues
+[Remove the fixed issue from this section]
+```
+
+### Example 5: Using Feature Flags
+
+**Scenario**: Adding optional feature that depends on new dependency.
+
+**In Cargo.toml**:
+```toml
+[features]
+my-feature = ["some-dependency"]
+
+[dependencies]
+some-dependency = { version = "1.0", optional = true }
+```
+
+**In code**:
+```rust
+#[cfg(feature = "my-feature")]
+use some_dependency::SomeType;
+
+#[cfg(feature = "my-feature")]
+pub fn feature_function() {
+    // Implementation
+}
+
+#[cfg(not(feature = "my-feature"))]
+pub fn feature_function() {
+    panic!("my-feature not enabled");
+}
+```
+
+**Testing**:
+```bash
+# Test without feature
+cargo test
+
+# Test with feature
+cargo test --features my-feature
+
+# Update context.md
+# Document the new feature in Build System section
+```

@@ -35,6 +35,14 @@ cargo build --release --features simd-native
 
 Full documentation is available in the [GitHub Wiki](https://github.com/louis-e/arnis/wiki/), covering topics such as technical explanations, FAQs, contribution guidelines and roadmaps.
 
+### For Contributors & Coding Agents
+This project uses a **context management system** to maintain continuity across development sessions. Please see:
+- **[CONTEXT_SYSTEM.md](CONTEXT_SYSTEM.md)** - Overview of the context management system
+- **[context.md](context.md)** - Current project state and session context
+- **[copilot-instructions.md](copilot-instructions.md)** - Detailed coding guidelines
+
+**Quick Start**: Read `context.md` before starting work, and update it when you're done!
+
 ## :trophy: Open Source
 #### Key objectives of this project
 - **Modularity**: Ensure that all components (e.g., data fetching, processing, and world generation) are cleanly separated into distinct modules for better maintainability and scalability.

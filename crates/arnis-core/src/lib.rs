@@ -8,6 +8,7 @@ pub mod colors;
 pub mod coordinate_system;
 pub mod cpu_info;
 pub mod data_processing;
+pub mod distributed;
 pub mod element_processing;
 pub mod elevation_data;
 pub mod floodfill;

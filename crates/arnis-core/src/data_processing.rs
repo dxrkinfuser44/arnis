@@ -19,7 +19,11 @@ pub fn generate_world(
     ground: Ground,
     args: &Args,
 ) -> Result<(), String> {
-    let mut editor: WorldEditor = WorldEditor::new(args.path.clone(), &xzbbox, llbbox);
+    let world_path = args.path.as_ref().ok_or_else(|| {
+        "World path is required for processing mode".to_string()
+    })?;
+    
+    let mut editor: WorldEditor = WorldEditor::new(world_path.clone(), &xzbbox, llbbox);
 
     println!("{} Processing data...", "[4/7]".bold());
 
@@ -244,7 +248,7 @@ pub fn generate_world(
         );
 
         if let Err(e) = update_player_spawn_y_after_generation(
-            &args.path,
+            world_path,
             Some(*spawn_coords),
             bbox_string,
             args.scale,

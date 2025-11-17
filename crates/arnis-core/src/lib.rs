@@ -1,6 +1,7 @@
 #![allow(clippy::module_inception)]
 
 pub mod args;
+pub mod asset_cache;
 pub mod block_definitions;
 pub mod bresenham;
 pub mod colors;

@@ -1,7 +1,8 @@
 use super::llpoint::LLPoint;
+use serde::{Deserialize, Serialize};
 
 /// A checked Bounding Box.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LLBBox {
     /// The "bottom-left" vertex of the rectangle
     min: LLPoint,

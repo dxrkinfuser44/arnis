@@ -259,3 +259,105 @@ pub fn fetch_area_name(lat: f64, lon: f64) -> Result<Option<String>, Box<dyn std
 
     Ok(None)
 }
+
+/// Fetch data with cache support
+/// Downloads and caches data, or loads from cache if available
+pub fn fetch_data_with_cache(
+    bbox: LLBBox,
+    debug: bool,
+    download_method: &str,
+    use_cache: bool,
+) -> Result<Value, Box<dyn std::error::Error>> {
+    use crate::asset_cache::AssetCache;
+
+    if !use_cache {
+        // No cache - use standard fetch
+        return fetch_data_from_overpass(bbox, debug, download_method, None);
+    }
+
+    // Try to use cache
+    let cache = AssetCache::default()?;
+
+    if cache.has_cache(&bbox) {
+        println!("{} Loading data from cache...", "[1/7]".bold());
+        emit_gui_progress_update(1.0, "Loading data from cache...");
+
+        let data_str = cache.load_osm_data(&bbox)?;
+        let data: Value = serde_json::from_str(&data_str)?;
+
+        println!("Cache hit! Data loaded from cache.");
+        emit_gui_progress_update(5.0, "");
+
+        Ok(data)
+    } else {
+        println!("{} Cache miss. Downloading data...", "[1/7]".bold());
+
+        // Fetch from API
+        let data = fetch_data_from_overpass(bbox, debug, download_method, None)?;
+
+        // Save to cache
+        let data_str = serde_json::to_string(&data)?;
+        cache.save_osm_data(bbox, &data_str, download_method)?;
+
+        println!("Data cached for future use.");
+
+        Ok(data)
+    }
+}
+
+/// Download-only mode: Download and cache data without processing
+pub fn download_only(
+    bbox: LLBBox,
+    debug: bool,
+    download_method: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use crate::asset_cache::AssetCache;
+
+    println!("{}", "=== DOWNLOAD ONLY MODE ===".bold().green());
+    println!("{} Downloading data...", "[1/1]".bold());
+    emit_gui_progress_update(1.0, "Downloading data...");
+
+    // Fetch from API
+    let data = fetch_data_from_overpass(bbox, debug, download_method, None)?;
+
+    // Save to cache
+    let cache = AssetCache::default()?;
+    let data_str = serde_json::to_string(&data)?;
+    let metadata = cache.save_osm_data(bbox, &data_str, download_method)?;
+
+    println!("\n{}", "Download complete!".bold().green());
+    println!("Data cached at: {:?}", AssetCache::default_cache_dir());
+    println!("Cache size: {} bytes", metadata.osm_data_size);
+    println!("\nYou can now run process-only mode to generate the world.");
+
+    emit_gui_progress_update(100.0, "Download complete");
+
+    Ok(())
+}
+
+/// Process-only mode: Process cached data without downloading
+pub fn load_from_cache(bbox: LLBBox) -> Result<Value, Box<dyn std::error::Error>> {
+    use crate::asset_cache::AssetCache;
+
+    println!("{}", "=== PROCESS ONLY MODE ===".bold().green());
+    println!("{} Loading from cache...", "[1/7]".bold());
+    emit_gui_progress_update(1.0, "Loading from cache...");
+
+    let cache = AssetCache::default()?;
+
+    if !cache.has_cache(&bbox) {
+        return Err("No cached data found for this bounding box. Run download-only mode first.".into());
+    }
+
+    let data_str = cache.load_osm_data(&bbox)?;
+    let data: Value = serde_json::from_str(&data_str)?;
+
+    let metadata = cache.get_metadata(&bbox)?;
+    println!("Cache loaded successfully!");
+    println!("Downloaded: {} (UNIX timestamp)", metadata.timestamp);
+    println!("Size: {} bytes", metadata.osm_data_size);
+
+    emit_gui_progress_update(5.0, "");
+
+    Ok(data)
+}

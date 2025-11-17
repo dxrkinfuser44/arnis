@@ -30,6 +30,7 @@ impl LLBBox {
         Ok(Self { min, max })
     }
 
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Result<Self, String> {
         let [min_lat, min_lng, max_lat, max_lng]: [f64; 4] = s
             .split([',', ' '])

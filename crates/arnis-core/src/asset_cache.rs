@@ -5,7 +5,6 @@
 /// - Cache downloaded assets with validation
 /// - Process from cached assets without re-downloading
 /// - Verify cache integrity
-
 use crate::coordinate_system::geographic::LLBBox;
 use serde::{Deserialize, Serialize};
 use std::fs::{self, File};
@@ -61,7 +60,10 @@ impl AssetCache {
     }
 
     /// Create asset cache with default directory
-    pub fn default() -> std::io::Result<Self> {
+    /// 
+    /// # Errors
+    /// Returns an error if the cache directory cannot be created
+    pub fn with_default_dir() -> std::io::Result<Self> {
         Self::new(Self::default_cache_dir())
     }
 
@@ -93,7 +95,7 @@ impl AssetCache {
         // Get timestamp
         let timestamp = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
-            .unwrap()
+            .unwrap_or_default()
             .as_secs();
 
         // Create metadata

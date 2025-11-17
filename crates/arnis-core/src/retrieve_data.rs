@@ -276,7 +276,7 @@ pub fn fetch_data_with_cache(
     }
 
     // Try to use cache
-    let cache = AssetCache::default()?;
+    let cache = AssetCache::with_default_dir()?;
 
     if cache.has_cache(&bbox) {
         println!("{} Loading data from cache...", "[1/7]".bold());
@@ -321,7 +321,7 @@ pub fn download_only(
     let data = fetch_data_from_overpass(bbox, debug, download_method, None)?;
 
     // Save to cache
-    let cache = AssetCache::default()?;
+    let cache = AssetCache::with_default_dir()?;
     let data_str = serde_json::to_string(&data)?;
     let metadata = cache.save_osm_data(bbox, &data_str, download_method)?;
 
@@ -343,7 +343,7 @@ pub fn load_from_cache(bbox: LLBBox) -> Result<Value, Box<dyn std::error::Error>
     println!("{} Loading from cache...", "[1/7]".bold());
     emit_gui_progress_update(1.0, "Loading from cache...");
 
-    let cache = AssetCache::default()?;
+    let cache = AssetCache::with_default_dir()?;
 
     if !cache.has_cache(&bbox) {
         return Err("No cached data found for this bounding box. Run download-only mode first.".into());

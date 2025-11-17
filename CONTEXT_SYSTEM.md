@@ -4,6 +4,8 @@ This repository uses a context management system to maintain continuity across c
 
 ## Quick Start for Agents
 
+**🚀 See [CONTEXT_QUICK_REF.md](CONTEXT_QUICK_REF.md) for a quick reference cheat sheet!**
+
 ### Starting a Session
 1. **Read `context.md`** - Understand current project state
 2. **Review `copilot-instructions.md`** - Follow project guidelines

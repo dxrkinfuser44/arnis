@@ -19,9 +19,9 @@ pub struct Args {
     #[arg(long, group = "location")]
     pub save_json_file: Option<String>,
 
-    /// Path to the Minecraft world (required)
-    #[arg(long, value_parser = validate_minecraft_world_path)]
-    pub path: PathBuf,
+    /// Path to the Minecraft world (required for processing modes)
+    #[arg(long, value_parser = validate_minecraft_world_path, required_unless_present = "download_only")]
+    pub path: Option<PathBuf>,
 
     /// Downloader method (requests/curl/wget) (optional)
     #[arg(long, default_value = "requests")]
@@ -54,6 +54,18 @@ pub struct Args {
     /// Enable debug mode (optional)
     #[arg(long)]
     pub debug: bool,
+
+    /// Use cache for OSM data (optional)
+    #[arg(long)]
+    pub use_cache: bool,
+
+    /// Download-only mode: Download and cache data without processing
+    #[arg(long)]
+    pub download_only: bool,
+
+    /// Process-only mode: Process from cache without downloading
+    #[arg(long)]
+    pub process_only: bool,
 
     /// Output runtime metrics JSON (requires `metrics` feature)
     #[cfg(feature = "metrics")]

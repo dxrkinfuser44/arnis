@@ -1,5 +1,7 @@
+use serde::{Deserialize, Serialize};
+
 /// Bounds-checked longitude and latitude.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LLPoint {
     lat: f64,
     lng: f64,

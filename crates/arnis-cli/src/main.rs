@@ -49,14 +49,54 @@ fn run_cli() {
 
     let args: Args = Args::parse();
 
-    let raw_data = match &args.file {
-        Some(file) => retrieve_data::fetch_data_from_file(file),
-        None => retrieve_data::fetch_data_from_overpass(
+    // Handle download-only mode
+    if args.download_only {
+        if let Err(e) = retrieve_data::download_only(
+            args.bbox,
+            args.debug,
+            args.downloader.as_str(),
+        ) {
+            eprintln!("{}: {}", "Download failed".red().bold(), e);
+            std::process::exit(1);
+        }
+        return; // Exit after downloading
+    }
+
+    // Validate path is provided for processing modes
+    let _world_path = match &args.path {
+        Some(path) => path.clone(),
+        None => {
+            eprintln!(
+                "{}",
+                "Error: --path is required for processing mode".red().bold()
+            );
+            std::process::exit(1);
+        }
+    };
+
+    // Fetch data based on mode
+    let raw_data = if args.process_only {
+        // Process-only mode: Load from cache
+        retrieve_data::load_from_cache(args.bbox)
+    } else if args.use_cache {
+        // Use cache if available, otherwise download and cache
+        retrieve_data::fetch_data_with_cache(
+            args.bbox,
+            args.debug,
+            args.downloader.as_str(),
+            true,
+        )
+    } else if let Some(file) = &args.file {
+        // Load from file
+        retrieve_data::fetch_data_from_file(file)
+    } else {
+        // Standard mode: Download without cache
+        retrieve_data::fetch_data_from_overpass(
             args.bbox,
             args.debug,
             args.downloader.as_str(),
             args.save_json_file.as_deref(),
-        ),
+        )
     }
     .expect("Failed to fetch data");
 

@@ -17,6 +17,25 @@ Download the [latest release](https://github.com/louis-e/arnis/releases/) or [co
 Choose your area on the map using the rectangle tool and select your Minecraft world - then simply click on <i>Start Generation</i>!
 Additionally, you can customize various generation settings, such as world scale, spawn point, or building interior generation.
 
+### 💾 Asset Caching (New!)
+Arnis now supports separating data download from processing:
+
+```bash
+# Download data for offline use
+arnis --bbox="lat1,lng1,lat2,lng2" --download-only
+
+# Process later without re-downloading
+arnis --bbox="lat1,lng1,lat2,lng2" --path="/path/to/world" --process-only
+```
+
+This is useful for:
+- Working offline after downloading
+- Processing the same area with different settings
+- Development and testing without network delays
+- Avoiding API rate limits
+
+See **[CACHE_USAGE.md](CACHE_USAGE.md)** for complete caching documentation.
+
 ## 🧠 Apple Silicon & Native Builds
 - Build the CLI or GUI with Apple Silicon optimized code by enabling the `simd-native` feature and compiling with native CPU flags. For example:
 
@@ -34,6 +53,11 @@ cargo build --release --features simd-native
 <img src="assets/git/documentation.png" width="100%" alt="Banner">
 
 Full documentation is available in the [GitHub Wiki](https://github.com/louis-e/arnis/wiki/), covering topics such as technical explanations, FAQs, contribution guidelines and roadmaps.
+
+### Documentation Files
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - System architecture and data flow
+- **[ERROR_HANDLING.md](ERROR_HANDLING.md)** - Error handling guide and troubleshooting
+- **[CACHE_USAGE.md](CACHE_USAGE.md)** - Asset caching system usage guide
 
 ### For Contributors & Coding Agents
 This project uses a **context management system** to maintain continuity across development sessions. Please see:

@@ -1,7 +1,8 @@
 use super::llpoint::LLPoint;
+use serde::{Deserialize, Serialize};
 
 /// A checked Bounding Box.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LLBBox {
     /// The "bottom-left" vertex of the rectangle
     min: LLPoint,
@@ -29,6 +30,7 @@ impl LLBBox {
         Ok(Self { min, max })
     }
 
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Result<Self, String> {
         let [min_lat, min_lng, max_lat, max_lng]: [f64; 4] = s
             .split([',', ' '])

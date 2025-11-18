@@ -1,0 +1,44 @@
+name: Validate Context
+
+on:
+  pull_request:
+    paths:
+      - 'context.md'
+      - '.github/scripts/validate-context.sh'
+  push:
+    branches:
+      - main
+    paths:
+      - 'context.md'
+      - '.github/scripts/validate-context.sh'
+
+jobs:
+  validate-context:
+    name: Validate context.md
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Make validation script executable
+        run: chmod +x .github/scripts/validate-context.sh
+      
+      - name: Validate context.md
+        run: .github/scripts/validate-context.sh
+      
+      - name: Check if context.md was updated
+        if: github.event_name == 'pull_request'
+        run: |
+          # Check if there are code changes but context.md wasn't updated
+          if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(rs|toml)$' > /dev/null; then
+            if ! git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q 'context.md'; then
+              echo "⚠️  Warning: Code changes detected but context.md was not updated"
+              echo "Consider updating context.md with your changes"
+              # This is just a warning, not a failure
+            else
+              echo "✅ context.md was updated along with code changes"
+            fi
+          else
+            echo "ℹ️  No code changes detected, context.md update not required"
+          fi

@@ -6,6 +6,7 @@ use crate::element_processing::*;
 use crate::ground::Ground;
 use crate::osm_parser::ProcessedElement;
 use crate::progress::emit_gui_progress_update;
+use crate::telemetry::{send_log, LogLevel};
 use crate::world_editor::WorldEditor;
 use colored::Colorize;
 use indicatif::{ProgressBar, ProgressStyle};

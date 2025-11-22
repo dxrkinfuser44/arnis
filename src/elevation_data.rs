@@ -502,8 +502,9 @@ fn filter_elevation_outliers(height_grid: &mut [Vec<f64>]) {
         return;
     }
 
-    // Sort to find percentiles
-    all_heights.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    // Sort to find percentiles using total_cmp for deterministic ordering
+    // Note: NaN and infinite values are already filtered out when building all_heights
+    all_heights.sort_by(|a, b| a.total_cmp(b));
     let len = all_heights.len();
 
     // Use 1st and 99th percentiles to define reasonable bounds

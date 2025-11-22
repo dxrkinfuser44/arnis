@@ -39,6 +39,32 @@ mod progress {
         false
     }
 }
+
+// Mock telemetry module for non-GUI builds
+// This module provides the same public API as the real telemetry module
+// to ensure consistency between GUI and CLI builds.
+#[cfg(not(feature = "gui"))]
+mod telemetry {
+    #[allow(dead_code)]
+    pub enum LogLevel {
+        Debug,
+        Info,
+        Warning,
+        Error,
+    }
+    
+    #[allow(dead_code)]
+    pub fn send_log(_level: LogLevel, _message: &str) {}
+    
+    #[allow(dead_code)]
+    pub fn send_generation_click() {}
+    
+    #[allow(dead_code)]
+    pub fn set_telemetry_consent(_consent: bool) {}
+    
+    #[allow(dead_code)]
+    pub fn install_panic_hook() {}
+}
 #[cfg(target_os = "windows")]
 use windows::Win32::System::Console::{AttachConsole, FreeConsole, ATTACH_PARENT_PROCESS};
 

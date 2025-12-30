@@ -45,5 +45,10 @@
   "interior": "Interior Generation",
   "roof": "Roof Generation",
   "fillground": "Fill Ground",
-  "bedrock_use_java": "Use Java to select worlds"
+  "bedrock_use_java": "Use Java to select worlds",
+  "cache_only_mode": "Pre-Cache Only (No Generation)",
+  "caching_data": "Caching data...",
+  "cache_successful": "Data cached successfully!",
+  "cache_failed": "Failed to cache data",
+  "view_cached_regions": "View Cached Regions"
 }

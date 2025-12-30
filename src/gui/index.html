@@ -94,15 +94,14 @@
 
     <!-- Settings Modal -->
     <div id="settings-modal" class="modal" style="display: none;">
-      < class="modal-content">
+      <div class="modal-content">
         <span class="close-button" onclick="closeSettings()">&times;</span>
         <h2 data-localize="customization_settings">Customization Settings</h2>
 
         <!-- Generation Mode Dropdown -->
         <div class="settings-row">
           <label for="generation-mode-select" data-localize="generation_mode">Generation Mode</label>
-          <div class="ssudo chmod a+wr /var/lib/flatpak/app/com.spotify.Client/x86_64/stable/active/files/extra/share/spotify
-          sudo chmod a+wr -R /var/lib/flatpak/app/com.spotify.Client/x86_64/stable/active/files/extra/share/spotify/Appsettings-control">
+          <div class="settings-control">
             <select id="generation-mode-select" name="generation-mode-select" class="generation-mode-dropdown">
               <option value="geo-terrain" data-localize="mode_geo_terrain">Objects + Terrain</option>
               <option value="geo-only" data-localize="mode_geo_only">Objects only</option>
@@ -111,11 +110,11 @@
           </div>
         </div>
         
-      <!-- Pre-Cache Toggle-->
+        <!-- Pre-Cache Only Toggle-->
         <div class="settings-row">
-          <label for="precache-toggle" data-localize="precache_tiles">Pre-Cache Map Tiles</label>
+          <label for="cache-only-toggle" data-localize="cache_only_mode">Pre-Cache Only (No Generation)</label>
           <div class="settings-control">
-            <input type="checkbox" id="precache-toggle" name="precache-toggle">
+            <input type="checkbox" id="cache-only-toggle" name="cache-only-toggle">
           </div>
         </div>
         

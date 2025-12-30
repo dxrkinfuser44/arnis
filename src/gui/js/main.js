@@ -759,11 +759,71 @@ async function startGeneration() {
       return;
     }
 
-    // Only require world selection for Java format (Bedrock generates a new .mcworld file)
-    if (selectedWorldFormat === 'java' && (!worldPath || worldPath === "")) {
+    // Check if cache-only mode is enabled
+    var cacheOnly = document.getElementById("cache-only-toggle") && document.getElementById("cache-only-toggle").checked;
+
+    // Only require world selection if not in cache-only mode and using Java format
+    if (!cacheOnly && selectedWorldFormat === 'java' && (!worldPath || worldPath === "")) {
       const selectedWorld = document.getElementById('selected-world');
       localizeElement(window.localization, { element: selectedWorld }, "select_minecraft_world_first");
       selectedWorld.style.color = "#fa7878";
+      return;
+    }
+
+    // Get generation settings
+    var generationMode = document.getElementById("generation-mode-select").value;
+    var terrain = (generationMode === "geo-terrain" || generationMode === "terrain-only");
+    var scale = parseFloat(document.getElementById("scale-value-slider").value);
+
+    // Handle cache-only mode
+    if (cacheOnly) {
+      const progressElement = document.getElementById('progress');
+      const progressMessage = document.getElementById('progress-message');
+      
+      if (progressMessage) {
+        localizeElement(window.localization, { element: progressMessage }, "caching_data");
+      }
+      if (progressElement) {
+        progressElement.value = 50;
+      }
+
+      try {
+        const cacheId = await invoke("gui_cache_only", {
+          bboxText: selectedBBox,
+          worldScale: scale,
+          terrainEnabled: terrain
+        });
+
+        console.log("Data cached successfully with ID:", cacheId);
+        
+        if (progressMessage) {
+          localizeElement(window.localization, { element: progressMessage }, "cache_successful");
+        }
+        if (progressElement) {
+          progressElement.value = 100;
+        }
+
+        // Show success message with option to view caches
+        setTimeout(() => {
+          if (confirm(window.localization?.view_cached_regions || "Data cached! Would you like to view cached regions?")) {
+            window.location.href = "caches.html";
+          }
+          generationButtonEnabled = true;
+          if (progressElement) {
+            progressElement.value = 0;
+          }
+          if (progressMessage) {
+            progressMessage.textContent = "";
+          }
+        }, 2000);
+      } catch (error) {
+        console.error("Error caching data:", error);
+        if (progressMessage) {
+          progressMessage.textContent = (window.localization?.cache_failed || "Failed to cache data") + ": " + error;
+          progressMessage.style.color = "#fa7878";
+        }
+        generationButtonEnabled = true;
+      }
       return;
     }
 
@@ -782,15 +842,10 @@ async function startGeneration() {
       }
     }
 
-    // Get generation mode from dropdown
-    var generationMode = document.getElementById("generation-mode-select").value;
-    var terrain = (generationMode === "geo-terrain" || generationMode === "terrain-only");
     var skipOsmObjects = (generationMode === "terrain-only");
-
     var interior = document.getElementById("interior-toggle").checked;
     var roof = document.getElementById("roof-toggle").checked;
     var fill_ground = document.getElementById("fillground-toggle").checked;
-    var scale = parseFloat(document.getElementById("scale-value-slider").value);
     var floodfill_timeout = parseInt(document.getElementById("floodfill-timeout").value, 10);
     // var ground_level = parseInt(document.getElementById("ground-level").value, 10);
     // DEPRECATED: Ground level input removed from UI

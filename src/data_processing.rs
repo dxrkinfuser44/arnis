@@ -33,8 +33,11 @@ pub fn generate_world(
     args: &Args,
 ) -> Result<(), String> {
     // Default to Java format when called from CLI
+    let path = args.path.as_ref()
+        .ok_or_else(|| "Path is required for world generation".to_string())?
+        .clone();
     let options = GenerationOptions {
-        path: args.path.clone(),
+        path,
         format: WorldFormat::JavaAnvil,
         level_name: None,
         spawn_point: None,

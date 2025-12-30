@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="stylesheet" href="./css/styles.css" />
+  <link rel="stylesheet" href="./css/caches.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arnis - Cached Regions</title>
+  <script type="module" src="./js/caches.js" defer></script>
+  <script type="module" src="./js/language-selector.js" defer></script>
+</head>
+
+<body>
+  <main class="container">
+    <div class="row">
+      <a href="index.html" style="text-decoration: none;">
+        <img src="./images/logo.png" id="arnis-logo" class="logo arnis" alt="Arnis Logo" style="width: 35%; height: auto;">
+      </a>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="navigation-tabs">
+      <a href="index.html" class="nav-tab">
+        <span data-localize="map_view">Map View</span>
+      </a>
+      <a href="caches.html" class="nav-tab active">
+        <span data-localize="cached_regions">Cached Regions</span>
+      </a>
+    </div>
+
+    <!-- Cache Browser Section -->
+    <section class="section cache-browser">
+      <div class="cache-header">
+        <h2 data-localize="cached_regions_title">Cached Regions</h2>
+        <div class="cache-actions">
+          <button type="button" id="cleanup-expired-btn" class="action-button secondary" onclick="cleanupExpiredCaches()">
+            <span data-localize="cleanup_expired">Cleanup Expired</span>
+          </button>
+          <button type="button" id="clear-all-btn" class="action-button danger" onclick="clearAllCaches()">
+            <span data-localize="clear_all_caches">Clear All Caches</span>
+          </button>
+          <button type="button" id="refresh-btn" class="action-button primary" onclick="loadCaches()">
+            <span data-localize="refresh">Refresh</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Cache Statistics -->
+      <div class="cache-stats">
+        <div class="stat-item">
+          <span class="stat-label" data-localize="total_caches">Total Caches:</span>
+          <span class="stat-value" id="total-caches">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label" data-localize="total_size">Total Size:</span>
+          <span class="stat-value" id="total-size">0 MB</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label" data-localize="expired_caches">Expired:</span>
+          <span class="stat-value" id="expired-caches">0</span>
+        </div>
+      </div>
+
+      <!-- Cache Grid -->
+      <div id="cache-grid" class="cache-grid">
+        <!-- Cache cards will be dynamically inserted here -->
+      </div>
+
+      <!-- Empty State -->
+      <div id="empty-state" class="empty-state" style="display: none;">
+        <div class="empty-icon">📦</div>
+        <h3 data-localize="no_caches_title">No Cached Regions</h3>
+        <p data-localize="no_caches_description">
+          You haven't cached any regions yet. Go to the Map View and enable "Pre-Cache Only" in settings to cache regions for offline generation.
+        </p>
+        <a href="index.html" class="action-button primary">
+          <span data-localize="go_to_map">Go to Map View</span>
+        </a>
+      </div>
+
+      <!-- Loading State -->
+      <div id="loading-state" class="loading-state">
+        <div class="spinner"></div>
+        <p data-localize="loading_caches">Loading cached regions...</p>
+      </div>
+    </section>
+
+    <!-- Generate from Cache Modal -->
+    <div id="generate-modal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <span class="close-button" onclick="closeGenerateModal()">&times;</span>
+        <h2 data-localize="generate_from_cache">Generate from Cache</h2>
+
+        <div class="modal-section">
+          <h3 id="modal-cache-name">Cache Name</h3>
+          <p id="modal-cache-details" style="color: #888; font-size: 0.9em;"></p>
+        </div>
+
+        <div class="modal-section">
+          <label for="modal-world-path" data-localize="select_world">Select World</label>
+          <button type="button" id="modal-choose-world-btn" onclick="selectWorldForCache()" class="choose-world-btn">
+            <span data-localize="choose_world">Choose World</span>
+            <br>
+            <span id="modal-selected-world" style="font-size: 0.8em; color: #fecc44; display: block; margin-top: 4px;" data-localize="no_world_selected">
+              No world selected
+            </span>
+          </button>
+        </div>
+
+        <div class="modal-section">
+          <h3 data-localize="generation_options">Generation Options</h3>
+
+          <div class="option-row">
+            <label>
+              <input type="checkbox" id="modal-interior" checked>
+              <span data-localize="interior">Interior Generation</span>
+            </label>
+          </div>
+
+          <div class="option-row">
+            <label>
+              <input type="checkbox" id="modal-roof" checked>
+              <span data-localize="roof">Roof Generation</span>
+            </label>
+          </div>
+
+          <div class="option-row">
+            <label>
+              <input type="checkbox" id="modal-fillground">
+              <span data-localize="fillground">Fill Ground</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="action-button secondary" onclick="closeGenerateModal()">
+            <span data-localize="cancel">Cancel</span>
+          </button>
+          <button type="button" id="modal-generate-btn" class="action-button primary" onclick="startGenerationFromCache()">
+            <span data-localize="start_generation">Start Generation</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <span class="close-button" onclick="closeDeleteModal()">&times;</span>
+        <h2 data-localize="confirm_delete">Confirm Delete</h2>
+
+        <p data-localize="delete_confirmation">
+          Are you sure you want to delete this cached region? This action cannot be undone.
+        </p>
+
+        <div class="modal-section">
+          <strong id="delete-cache-name"></strong>
+          <br>
+          <span id="delete-cache-details" style="color: #888; font-size: 0.9em;"></span>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="action-button secondary" onclick="closeDeleteModal()">
+            <span data-localize="cancel">Cancel</span>
+          </button>
+          <button type="button" id="confirm-delete-btn" class="action-button danger" onclick="confirmDelete()">
+            <span data-localize="delete">Delete</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Progress Modal -->
+    <div id="progress-modal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <h2 data-localize="generating_world">Generating World</h2>
+
+        <div class="progress-section">
+          <div class="progress-bar-container">
+            <div class="progress-bar" id="modal-progress-bar"></div>
+          </div>
+          <div class="progress-status">
+            <span id="modal-progress-message"></span>
+            <span id="modal-progress-detail">0%</span>
+          </div>
+        </div>
+
+        <p style="color: #888; margin-top: 20px;" data-localize="generation_progress_note">
+          Please wait while the world is being generated. This may take several minutes depending on the area size.
+        </p>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // Global state
+    let caches = [];
+    let selectedCacheId = null;
+    let selectedWorldPath = null;
+
+    // Load caches on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      loadCaches();
+    });
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arnis Coordinate System Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            margin: -20px -20px 30px -20px;
+            border-radius: 0 0 10px 10px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        nav {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        nav a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+
+        nav a:hover {
+            color: #764ba2;
+        }
+
+        h2 {
+            color: #667eea;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            font-size: 2em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            color: #764ba2;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        h4 {
+            color: #555;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .warning-box {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .success-box {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .diagram {
+            background: white;
+            border: 2px solid #ddd;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .coord-box {
+            display: inline-block;
+            padding: 20px;
+            margin: 10px;
+            border: 3px solid #667eea;
+            border-radius: 10px;
+            background: #f8f9fa;
+            min-width: 200px;
+        }
+
+        .coord-label {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        .coord-value {
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+            color: #333;
+        }
+
+        .arrow {
+            font-size: 2em;
+            color: #667eea;
+            margin: 0 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 20px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        .formula-box {
+            background: #fff9e6;
+            border: 2px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            font-size: 1.1em;
+        }
+
+        .example-box {
+            background: #f0f0f0;
+            border-left: 4px solid #764ba2;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        footer {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+            text-align: center;
+            color: #666;
+        }
+
+        .grid-diagram {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        .axis-diagram {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📐 Coordinate System Documentation</h1>
+            <p class="subtitle">Understanding coordinate transformations in Arnis</p>
+        </header>
+
+        <nav>
+            <ul>
+                <li><a href="architecture.html">Architecture</a></li>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#geographic">Geographic Coords</a></li>
+                <li><a href="#minecraft">Minecraft Coords</a></li>
+                <li><a href="#transformation">Transformation</a></li>
+                <li><a href="#examples">Examples</a></li>
+                <li><a href="element-processing.html">Processing</a></li>
+            </ul>
+        </nav>
+
+        <section id="overview">
+            <h2>🌍 Overview</h2>
+
+            <p>
+                Arnis uses a sophisticated coordinate transformation</p> system to convert real-world geographic
+                coordinates into Minecraft block coordinates. This system is the foundation of accurate world
+                generation, ensuring that the spatial relationships in OpenStreetMap data are preserved in
+                the generated Minecraft world.
+            </p>
+
+            <div class="info-box">
+                <strong>📍 Key Concept:</strong> The coordinate system bridges two fundamentally different
+                spaces: geographic coordinates (spherical, in degrees) and Minecraft coordinates (Cartesian,
+                in blocks). Understanding this transformation is crucial for working with Arnis.
+            </div>
+
+            <h3>Two Coordinate Systems</h3>
+
+            <div class="grid-diagram">
+                <div class="axis-diagram">
+                    <h4>🌐 Geographic Coordinates</h4>
+                    <p><strong>System:</strong> WGS84 (EPSG:4326)</p>
+                    <p><strong>Units:</strong> Degrees</p>
+                    <p><strong>Components:</strong></p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li></li>📍 Latitude (lat) - North/South</li>
+                        <li>📍 Longitude (lng) - East/West</li>
+                    </ul>
+                    <p style="margin-top: 15px;"><strong>Range:</strong></p>
+                    <p>lat: -90° to 90°<br>lng: -180° to 180°</p>
+                </div>
+
+                <div class="axis-diagram">
+                    <h4>🎮 Minecraft Coordinates</h4>
+                    <p><strong>System:</strong> Cartesian</p>
+                    <p><strong>Units:</strong> Blocks</p>
+                    <p><strong>Components:</strong></p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li>🔷</li> X - East/West</li>
+                        <li>🔷 Y - Up/Down (elevation)</li>
+                        <li>🔷 Z - North/South</li>
+                    </ul>
+                    <p style="margin-top: 15px;"><strong>Range:</strong></p>
+                    <p>x, z: -30,000,000 to 30,000,000<br>y: -64 to 319</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="geographic">
+            <h2>🗺️ Geographic Coordinate System</h2>
+
+            <h3>WGS84 Standard</h3>
+            <p>
+                OpenStreetMap uses the WGS84 coordinate reference system (EPSG:4326), which represents
+                locations on Earth using latitude and longitude in decimal degrees.
+            </p>
+
+            <h4></h4>Latitude (lat)</h4>
+            <ul>
+                <li><strong>Range:</strong> -90° (South Pole) to +90° (North Pole)</li>
+                <li><strong>Zero point:</strong> Equator</li>
+                <li><strong>Positive:</strong> Northern Hemisphere</li>
+                <li><strong>Negative:</strong> Southern Hemisphere</li>
+            </ul>
+
+            <h4>Longitude (lng)</h4>
+            <ul>
+                <li><strong>Range:</strong> -180° (Western) to +180° (Eastern)</li>
+                <li><strong>Zero point:</strong> Prime Meridian (Greenwich)</li>
+                <li><strong>Positive:</strong> East of Prime Meridian</li>
+                <li><strong>Negative:</strong> West of Prime Meridian</li>
+            </ul>
+
+            <h3>Bounding Boxes</h3>
+            <p>
+                A bounding box (bbox) defines a rectangular geographic area using minimum and maximum
+                coordinates:
+            </p>
+
+            <pre><code>//</pre> LLBBox structure
+pub struct LLBBox {
+    min: LLPoint,  // Southwest corner (min_lat, min_lng)
+    max: LLPoint,  // Northeast corner (max_lat, max_lng)
+}
+
+// Example: Central London
+let bbox = LLBBox {
+    min: LLPoint::new(51.500, -0.130),  // min_lat, min_lng
+    max: LLPoint::new(51.520, -0.100),  // max_lat, max_lng
+};</code></pre>
+
+            <div class="warning-box">
+                <strong>⚠️ Important:</strong> Longitude values can wrap around at ±180°. Areas crossing
+                the International Date Line require special handling. Arnis currently works best with
+                bounding boxes that don't cross this line.
+            </div>
+
+            <h3>Geographic Point Structure</h3>
+            <pre><code>// LLPoint (Lat/Lng Point)
+pub struct LLPoint {
+    lat: f64,  // Latitude in degrees
+    lng: f64,  // Longitude in degrees
+}
+
+impl LLPoint {
+    pub fn new(lat: f64, lng: f64) -> Result<Self, String> {
+        // Validate ranges
+        if lat < -90.0 || lat > 90.0 {
+            return Err("Latitude out of range");
+        }
+        if lng < -180.0 || lng > 180.0 {
+            return Err("Longitude out of range");
+        }
+        Ok(Self { lat, lng })
+    }
+}</code></pre>
+
+            <h3>Real-World Examples</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Location</th>
+                        <th>Latitude</th>
+                        <th>Longitude</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>London, UK</td>
+                        <td>51.5074°</td>
+                        <td>-0.1278°</td>
+                        <td>Big Ben area</td>
+                    </tr>
+                    <tr>
+                        <td>New York, USA</td>
+                        <td>40.7128°</td>
+                        <td>-74.0060°</td>
+                        <td>Times Square</td>
+                    </tr>
+                    <tr>
+                        <td>Tokyo, Japan</td>
+                        <td>35.6762°</td>
+                        <td>139.6503°</td>
+                        <td>Tokyo Tower</td>
+                    </tr>
+                    <tr>
+                        <td>Sydney, Australia</td>
+                        <td>-33.8688°</td>
+                        <td>151.2093°</td>
+                        <td>Opera House</td>
+                    </tr>
+                    <tr>
+                        <td>Arnis, Germany</td>
+                        <td>54.6333°</td>
+                        <td>9.9333°</td>
+                        <td>Project namesake</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="minecraft">
+            <h2>🎮 Minecraft Coordinate System</h2>
+
+            <h3>Cartesian Coordinates</h3>
+            <p>
+                Minecraft uses a 3D Cartesian coordinate system with integer block positions. Arnis primarily
+                works with X and Z coordinates (horizontal plane), while Y represents elevation.
+            </p>
+
+            <h4>X-Axis (East/West)</h4>
+            <ul>
+                <li><strong>Direction:</strong> Increases toward East, decreases toward West</li>
+                <li><strong>Range:</strong> -30,000,000 to 30,000,000 (world border)</li>
+                <li><strong>Unit:</strong> 1 block</li>
+            </ul>
+
+            <h4>Y-Axis (Up/Down)</h4>
+            <ul>
+                <li><strong>Direction:</strong> Increases upward, decreases downward</li>
+                <li><strong>Range:</strong> -64 (deepslate) to 319 (build limit)</li>
+                <li><strong>Ground level:</strong> Configurable (default: -62 in Arnis)</li>
+                <li><strong>Bedrock:</strong> Y = -64</li>
+            </ul>
+
+            <h4>Z-Axis (North/South)</h4>
+            <ul>
+                <li><strong>Direction:</strong> Increases toward South, decreases toward North</li>
+                <li><strong>Range:</strong> -30,000,000 to 30,000,000</li>
+                <li><strong>Unit:</strong> 1 block</li>
+            </ul>
+
+            <div class="info-box">
+                <strong>🧭 Cardinal Directions:</strong> In Minecraft, negative X is West, positive X is East,
+                negative Z is North, and positive Z is South. This is important when orienting real-world
+                geographic data.
+            </div>
+
+            <h3>XZPoint Structure</h3>
+            <pre><code>// XZPoint (Minecraft horizontal coordinates)
+pub struct XZPoint {
+    pub x: i32,  // East/West position in blocks
+    pub z: i32,  // North/South position in blocks
+}
+
+// XZBBox (Minecraft bounding box)
+pub struct XZBBox {
+    min_x: i32,
+    max_x: i32,
+    min_z: i32,
+    max_z: i32,
+}
+
+impl XZBBox {
+    pub fn width(&self) -> i32 {
+        self.max_x - self.min_x + 1
+    }
+
+    pub fn height(&self) -> i32 {
+        self.max_z - self.min_z + 1
+    }
+
+    pub fn total_blocks(&self) -> u64 {
+        (self.width() as u64) * (self.height() as u64)
+    }
+}</code></pre>
+
+            <h3>Relative vs Absolute Y Coordinates</h3>
+            <p>
+                Arnis uses two types of Y coordinates:
+            </p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Use Case</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Relative Y</strong></td>
+                        <td>Offset from ground level (e.g., y=0 is ground, y=10 is 10 blocks above)</td>
+                        <td>Buildings, vegetation, structures</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Absolute Y</strong></td>
+                        <td>Fixed world coordinate (e.g., y=-64 is bedrock, y=0 is sea level)</td>
+                        <td>Terrain, bedrock, elevation-based features</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <pre><code>// WorldEditor methods
+editor.set_block(STONE, x, 5, z, None, None);  // Relative: 5 blocks above ground
+
+editor.set_block_absolute(BEDROCK, x, -64, z, None, None);  // Absolute: bedrock layer</code></pre>
+        </section>
+
+        <section id="transformation">
+            <h2>🔄 Coordinate Transformation</h2>
+
+            <h3>Overview</h3>
+            <p>
+                The CoordTransformer is responsible for converting geographic coordinates to Minecraft
+                coordinates. This transformation accounts for the scale factor and ensures proper alignment.
+            </p>
+
+            <div class="diagram">
+                <div class="coord-box">
+                    <div class="coord-label">Geographic Input</div>
+                    <div class="coord-value">
+                        lat: 51.5074°<br>
+                        lng: -0.1278°
+                    </div>
+                </div>
+
+                <span class="arrow">→</span>
+
+                <div class="coord-box">
+                    <div class="coord-label">Transformation</div>
+                    <div class="coord-value">
+                        Apply scale<br>
+                        Apply offset<br>
+                        Round to integer
+                    </div>
+                </div>
+
+                <span class="arrow">→</span>
+
+                <div class="coord-box">
+                    <div class="coord-label">Minecraft Output</div>
+                    <div class="coord-value">
+                        x: 1234<br>
+                        z: 5678
+                    </div>
+                </div>
+            </div>
+
+            <h3>CoordTransformer Structure</h3>
+            <pre><code>pub struct CoordTransformer {
+    // Geographic bounds
+    min_lat: f64,
+    max_lat: f64,
+    min_lng: f64,
+    max_lng: f64,
+
+    // Minecraft bounds
+    min_x: i32,
+    max_x: i32,
+    min_z: i32,
+    max_z: i32,
+
+    // Scale factors
+    scale_factor_x: f64,
+    scale_factor_z: f64,
+
+    // User-defined scale
+    scale: f64,
+}
+
+impl CoordTransformer {
+    pub fn llbbox_to_xzbbox(
+        llbbox: &LLBBox,
+        scale: f64
+    ) -> Result<(Self, XZBBox), String> {
+        // Create transformer and compute Minecraft bounds
+    }
+}</code></pre>
+
+            <h3>Transformation Formulas</h3>
+
+            <h4>Longitude to X (East/West)</h4>
+            <div class="formula-box">
+                x = (lng - min_lng) × scale_factor_x × scale
+            </div>
+            <p>
+                Where <code>scale_factor_x</code> is calculated based on the distance between min and max
+                longitude, converted to meters at the given latitude.
+            </p>
+
+            <h4>Latitude to Z (North/South)</h4>
+            <div class="formula-box">
+                z = (max_lat - lat) × scale_factor_z × scale
+            </div>
+            <p>
+                Note the inversion: higher latitudes (North) map to lower Z values in Minecraft.
+            </p>
+
+            <h3>Scale Factor Calculation</h3>
+            <p>
+                The scale factor converts degrees to meters, accounting for Earth's curvature:
+            </p>
+
+            <pre><code>// Earth's radius in meters
+const EARTH_RADIUS: f64 = 6371000.0;
+
+// Latitude to meters (constant at all latitudes)
+let lat_diff_rad = (max_lat - min_lat).to_radians();
+let meters_per_degree_lat = EARTH_RADIUS * lat_diff_rad / (max_lat - min_lat);
+
+// Longitude to meters (varies with latitude)
+let avg_lat = (min_lat + max_lat) / 2.0;
+let lng_diff_rad = (max_lng - min_lng).to_radians();
+let meters_per_degree_lng = EARTH_RADIUS * avg_lat.cos() * lng_diff_rad / (max_lng - min_lng);
+
+// Scale factors (meters to blocks)
+scale_factor_x = meters_per_degree_lng;
+scale_factor_z = meters_per_degree_lat;</code></pre>
+
+            <div class="warning-box">
+                <strong>⚠️ Latitude Dependency:</strong> The meters-per-degree for longitude varies with
+                latitude. At the equator, one degree of longitude ≈ 111 km. At 60° latitude, it's only
+                ≈ 56 km. Arnis uses the average latitude of the bounding box for this calculation.
+            </div>
+
+            <h3>User Scale Parameter</h3>
+            <p>
+                The user can specify a <code>scale</code> parameter that multiplies the final coordinates:
+            </p>
+            <ul>
+                <li><strong>scale = 1.0:</strong> 1 real-world meter = 1 Minecraft block (default)</li>
+                <li><strong>scale = 2.0:</strong> 1 real-world meter = 2 Minecraft blocks (2x larger)</li>
+                <li><strong>scale = 0.5:</strong> 2 real-world meters = 1 Minecraft block (2x smaller)</li>
+            </ul>
+
+            <pre><code>// CLI usage
+cargo run -- --bbox="51.5,0.1,51.6,0.2" --scale=2.0 --path="/path/to/world"</code></pre>
+
+            <h3>Complete Transformation Example</h3>
+            <div class="example-box">
+                <h4>Scenario: Transform London coordinates</h4>
+                <pre><code>// Input bounding box
+let llbbox = LLBBox {
+    min: LLPoint::new(51.500, -0.130),
+    max: LLPoint::new(51.520, -0.100),
+};
+let scale = 1.0;
+
+// Create transformer
+let (transformer, xzbbox) = CoordTransformer::llbbox_to_xzbbox(&llbbox, scale)?;
+
+// Transform a specific point (Big Ben)
+let big_ben = LLPoint::new(51.5007, -0.1246);
+let mc_point = transformer.transform_point(big_ben);
+
+// Result
+println!("Big Ben in Minecraft: x={}, z={}", mc_point.x, mc_point.z);
+// Output: x=169, z=43 (approximate, relative to bbox minimum)</code></pre>
+            </div>
+        </section>
+
+        <section id="bbox-operations">
+            <h2>📦 Bounding Box Operations</h2>
+
+            <h3>Clipping</h3>
+            <p>
+                Clipping is a critical optimization that reduces the number of nodes processed by removing
+                those outside the bounding box.
+            </p>
+
+            <pre><code>pub fn clip_way_to_bbox(
+    nodes: &[ProcessedNode],
+    bbox: &XZBBox
+) -> Vec<ProcessedNode> {
+    let mut clipped = Vec::new();
+
+    for window in nodes.windows(2) {
+        let p1 = &window[0];
+        let p2 = &window[1];
+
+        // Check if segment intersects bbox
+        if segment_intersects_bbox(p1, p2, bbox) {
+            // Add points, clipping to bbox boundaries
+            clipped.push(clip_point_to_bbox(p1, bbox));
+            clipped.push(clip_point_to_bbox(p2, bbox));
+        }
+    }
+
+    clipped
+}</code></pre>
+
+            <h3>Contains Check</h3>
+            <pre><code>impl XZBBox {
+    pub fn contains(&self, point: &XZPoint) -> bool {
+        point.x >= self.min_x &&
+        point.x <= self.max_x &&
+        point.z >= self.min_z &&
+        point.z <= self.max_z
+    }
+}</code></pre>
+
+            <h3>Intersection Detection</h3>
+            <p>
+                Determining if a line segment intersects the bounding box uses the Liang-Barsky algorithm
+                for efficient clipping.
+            </p>
+
+            <div class="success-box">
+                <strong>✅ Performance Impact:</strong> Early bbox clipping reduces memory usage by up to
+                90% for large areas, as most OSM nodes in the data are outside the actual generation area.
+            </div>
+        </section>
+
+        <section id="examples">
+            <h2>💡 Practical Examples</h2>
+
+            <h3>Example 1: Small Town</h3>
+            <div class="example-box">
+                <h4>Input: Arnis, Germany</h4>
+                <table>
+                    <tr>
+                        <td><strong>Bounding Box:</strong></td>
+                        <td>54.630° N, 9.930° E to 54.636° N, 9.936° E</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Area:</strong></td>
+                        <td>~0.6 km × 0.4 km ≈ 0.24 km²</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Scale:</strong></td>
+                        <td>1.0 (1:1)</td>
+                    </tr>
+                </table>
+
+                <h4>Output: Minecraft World</h4>
+                <table>
+                    <tr>
+                        <td><strong>Dimensions:</strong></td>
+                        <td>~600 × 400 blocks</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Total Blocks:</strong></td>
+                        <td>240,000 horizontal blocks</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Generation Time:</strong></td>
+                        <td>~30 seconds</td>
+                    </tr>
+                </table>
+            </div>
+
+            <h3>Example 2: City District</h3>
+            <div class="example-box">
+                <h4>Input: Manhattan, NYC</h4>
+                <table>
+                    <tr>
+                        <td><strong>Bounding Box:</strong></td>
+                        <td>40.750° N, -73.995° W to 40.760° N, -73.985° W</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Area:</strong></td>
+                        <td>~1.1 km × 0.9 km ≈ 1.0 km²</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Scale:</strong></td>
+                        <td>0.5 (2:1 compression)</td>
+                    </tr>
+                </table>
+
+                <h4>Output: Minecraft World</h4>
+                <table>
+                    <tr>
+                        <td><strong>Dimensions:</strong></td>
+                        <td>~550 × 450 blocks</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Buildings:</strong></td>
+                        <td>~200 structures</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Generation Time:</strong></td>
+                        <td>~2 minutes</td>
+                    </tr>
+                </table>
+            </div>
+
+            <h3>Example 3: Custom Scale</h3>
+            <pre><code>// Generate a 4x scaled version for better detail
+// 1 meter in real world = 4 blocks in Minecraft
+
+let args = Args {
+    bbox: LLBBox::from_str("51.5,0.1,51.52,0.12")?,
+    scale: 4.0,
+    path: PathBuf::from("/path/to/world"),
+    // ... other settings
+};
+
+// Result: Buildings and roads will be 4x larger
+// A 10m wide road becomes 40 blocks wide</code></pre>
+
+            <h3>Edge Case: Crossing the Prime Meridian</h3>
+            <div class="warning-box">
+                <strong>⚠️ Special Handling Required:</strong>
+                <pre><code>// Bbox crossing Prime Meridian (0° longitude)
+// min_lng = -0.05 (West), max_lng = 0.05 (East)
+let bbox = LLBBox {
+    min: LLPoint::new(51.5, -0.05),
+    max: LLPoint::new(51.6, 0.05),
+};
+
+// This works correctly because -0.05 < 0.05
+// No special handling needed for Prime Meridian</code></pre>
+            </div>
+
+            <h3>Edge Case: Southern Hemisphere</h3>
+            <pre><code>// Sydney, Australia (negative latitude)
+let bbox = LLBBox {
+    min: LLPoint::new(-33.88, 151.20),  // Note: negative latitude
+    max: LLPoint::new(-33.85, 151.23),
+};
+
+// Transformation handles negative latitudes correctly
+// Z coordinates still increase toward South (less negative = more South)</code></pre>
+        </section>
+
+        <section id="debugging">
+            <h2>🐛 Debugging Coordinates</h2>
+
+            <h3>Debug Output</h3>
+            <p>Enable coordinate debugging with the <code>--debug</code> flag:</p>
+            <pre><code>cargo run -- --bbox="51.5,0.1,51.52,0.12" --path="/world" --debug
+
+// Output includes:
+// - Scale factors (X and Z)
+// - Bounding box in both coordinate systems
+// - Sample transformations
+// - Total elements processed</code></pre>
+
+            <h3>Validation Checks</h3>
+            <pre><code>// Check if coordinates are reasonable
+if scale_factor_x < 1.0 || scale_factor_x > 1000000.0 {
+    eprintln!("Warning: Unusual scale factor X: {}", scale_factor_x);
+}
+
+// Verify bbox size
+let width_meters = calculate_width(&llbbox);
+if width_meters > 100000.0 {  // 100 km
+    eprintln!("Warning: Very large area ({:.1} km)", width_meters / 1000.0);
+}</code></pre>
+
+            <h3>Common Issues</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Issue</th>
+                        <th>Cause</th>
+                        <th>Solution</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>World appears stretched</td>
+                        <td>Incorrect scale factor calculation</td>
+                        <td>Verify latitude is within valid range</td>
+                    </tr>
+                    <tr>
+                        <td>Coordinates out of range</td>
+                        <td>Bbox too large for given scale</td>
+                        <td>Reduce bbox size or scale factor</td>
+                    </tr>
+                    <tr>
+                        <td>North/South inverted</td>
+                        <td>Z-axis transformation error</td>
+                        <td>Check max_lat - lat formula</td>
+                    </tr>
+                    <tr>
+                        <td>Features misaligned</td>
+                        <td>Inconsistent coordinate usage</td>
+                        <td>Ensure all points use same transformer</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <footer>
+            <p>
+                <strong>Arnis Coordinate System Documentation</strong> |
+                Version 2.4.0 |
+                <a href="https://github.com/louis-e/arnis" target="_blank">GitHub Repository</a>
+            </p>
+            <p>Copyright © 2022-2025 Louis Erbkamm | Licensed under Apache-2.0</p>
+        </footer>
+    </div>
+</body>
+</html>

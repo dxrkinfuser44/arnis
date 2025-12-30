@@ -2,6 +2,7 @@ use crate::coordinate_system::{geographic::LLBBox, transformation::geo_distance}
 #[cfg(feature = "gui")]
 use crate::telemetry::{send_log, LogLevel};
 use image::Rgb;
+use serde::{Deserialize, Serialize};
 use std::path::Path;
 
 /// Maximum Y coordinate in Minecraft (build height limit)
@@ -19,7 +20,7 @@ const MIN_ZOOM: u8 = 10;
 const MAX_ZOOM: u8 = 15;
 
 /// Holds processed elevation data and metadata
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct ElevationData {
     /// Height values in Minecraft Y coordinates
     pub(crate) heights: Vec<Vec<i32>>,
@@ -220,7 +221,7 @@ pub fn fetch_elevation_data(
                         .push((tile_x, tile_y, x, y, pixel[0], pixel[1], pixel[2], height));
                     if extreme_values_found.len() <= 5 {
                         // Only log first 5 extreme values
-                        eprintln!("Extreme value found: tile({tile_x},{tile_y}) pixel({x},{y}) RGB({},{},{}) = {height}m", 
+                        eprintln!("Extreme value found: tile({tile_x},{tile_y}) pixel({x},{y}) RGB({},{},{}) = {height}m",
                                  pixel[0], pixel[1], pixel[2]);
                     }
                 }

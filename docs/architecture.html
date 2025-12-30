@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arnis Architecture Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            margin: -20px -20px 30px -20px;
+            border-radius: 0 0 10px 10px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        nav {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        nav a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+
+        nav a:hover {
+            color: #764ba2;
+        }
+
+        h2 {
+            color: #667eea;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            font-size: 2em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            color: #764ba2;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        h4 {
+            color: #555;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .warning-box {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .success-box {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .diagram {
+            background: white;
+            border: 2px solid #ddd;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .flow-item {
+            display: inline-block;
+            padding: 15px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 10px;
+            border-radius: 8px;
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .arrow {
+            font-size: 2em;
+            color: #667eea;
+            margin: 0 10px;
+        }
+
+        .component-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .component-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #e0e0e0;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .component-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+
+        .component-card h4 {
+            color: #667eea;
+            margin-top: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .tech-badge {
+            background: #667eea;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        footer {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+            text-align: center;
+            color: #666;
+        }
+
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 20px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏗️ Arnis Architecture Documentation</h1>
+            <p class="subtitle">Comprehensive guide to the Arnis Minecraft world generator architecture</p>
+        </header>
+
+        <nav>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#architecture">Architecture</a></li>
+                <li><a href="#components">Components</a></li>
+                <li><a href="#dataflow">Data Flow</a></li>
+                <li><a href="#technologies">Technologies</a></li>
+                <li><a href="coordinate-system.html">Coordinates</a></li>
+                <li><a href="element-processing.html">Processing</a></li>
+                <li><a href="world-generation.html">Generation</a></li>
+            </ul>
+        </nav>
+
+        <section id="overview">
+            <h2>📖 Overview</h2>
+
+            <p>
+                Arnis is a sophisticated Minecraft world generator that transforms real-world geographic data from
+                OpenStreetMap (OSM) into accurate and detailed Minecraft worlds. The application supports both
+                Minecraft Java Edition (1.17+) and Bedrock Edition, processing geospatial data to create realistic
+                representations of terrain, buildings, roads, water bodies, and natural features.
+            </p>
+
+            <div class="info-box">
+                <strong></strong>🎯 Core Mission:</strong> Bridge the gap between real-world geography and Minecraft by
+                providing an automated, accurate, and performant world generation pipeline that handles large-scale
+                geographic data with ease.
+            </div>
+
+            <h3>Key Features</h3>
+            <ul>
+                <li><strong>Real-World Accuracy:</strong> Uses OpenStreetMap data for authentic geography</li>
+                <li><strong>Elevation Integration:</strong> Incorporates real terrain heights from AWS Terrarium tiles</li>
+                <li><strong>Dual Edition Support:</strong> Generates worlds for both Java and Bedrock editions</li>
+                <li><strong>Modular Architecture:</strong> Clean separation of concerns for maintainability</li>
+                <li><strong>Performance Optimized:</strong> Parallel processing and efficient algorithms</li>
+                <li><strong>User-Friendly GUI:</strong> Tauri-based desktop application with interactive map</li>
+                <li><strong>CLI Support:</strong> Command-line interface for automation and scripting</li>
+            </ul>
+        </section>
+
+        <section id="architecture">
+            <h2>🏛️ System Architecture</h2>
+
+            <h3>High-Level Architecture</h3>
+            <p>
+                Arnis follows a layered architecture pattern,</p> separating concerns into distinct layers that
+                communicate through well-defined interfaces. This design promotes maintainability, testability,
+                and extensibility.
+            </p>
+
+            <div class="diagram">
+                <div style="margin: 20px 0;">
+                    <div class="flow-item">User Interface Layer</div>
+                    <div class="arrow">↓</div>
+                    <div class="flow-item">Application Layer</div>
+                    <div class="arrow">↓</div>
+                    <div class="flow-item">Processing Layer</div>
+                    <div class="arrow">↓</div>
+                    <div class="flow-item">Data Access Layer</div>
+                    <div class="arrow">↓</div>
+                    <div class="flow-item">External Services</div>
+                </div>
+            </div>
+
+            <h3>Architectural Layers</h3>
+
+            <h4>1. User Interface Layer</h4>
+            <p>
+                Provides user interaction through both GUI and CLI interfaces. The GUI uses Tauri for a
+                lightweight, native desktop experience, while the CLI offers powerful scripting capabilities.
+            </p>
+            <ul>
+                <li><strong>GUI Module:</strong> <code>src/gui.rs</code> - Tauri-based web interface</li>
+                <li><strong>CLI Module:</strong> <code>src/args.rs</code> - Command-line argument parsing</li>
+                <li><strong>Progress Reporting:</strong> <code>src/progress.rs</code> - Real-time updates</li>
+            </ul>
+
+            <h4>2. Application Layer</h4>
+            <p>
+                Orchestrates the overall generation workflow, managing state and coordinating between layers.
+            </p>
+            <ul>
+                <li><strong>Main Orchestrator:</strong> <code>src/main.rs</code> - Entry point and flow control</li>
+                <li><strong>Data Processing:</strong> <code>src/data_processing.rs</code> - Generation pipeline</li>
+                <li><strong>Configuration:</strong> <code>tauri.conf.json</code>, <code>Cargo.toml</code></li>
+            </ul>
+
+            <h4>3. Processing Layer</h4>
+            <p>
+                Contains the core business logic for transforming OSM data into Minecraft structures.
+            </p>
+            <ul>
+                <li><strong>OSM Parsing:</strong> <code>src/osm_parser.rs</code> - Data deserialization</li>
+                <li><strong>Element Processing:</strong> <code>src/element_processing/</code> - Feature generators</li>
+                <li><strong>Map Transformation:</strong> <code>src/map_transformation/</code> - Data preprocessing</li>
+                <li><strong>Coordinate Systems:</strong> <code>src/coordinate_system/</code> - Transformations</li>
+            </ul>
+
+            <h4>4. Data Access Layer</h4>
+            <p>
+                Handles interaction with external data sources and world file I/O.
+            </p>
+            <ul>
+                <li><strong>Data Retrieval:</strong> <code>src/retrieve_data.rs</code> - API communication</li>
+                <li><strong>Elevation Data:</strong> <code>src/elevation_data.rs</code> - Terrain heights</li>
+                <li><strong>World Editor:</strong> <code>src/world_editor/</code> - File management</li>
+            </ul>
+
+            <h4>5. External Services</h4>
+            <ul>
+                <li><strong>Overpass API:</strong> OpenStreetMap data queries</li>
+                <li><strong>AWS Terrarium:</strong> Elevation tile service</li>
+                <li><strong>Nominatim API:</strong> Reverse geocoding for location names</li>
+            </ul>
+
+            <div class="warning-box">
+                <strong>⚠️ Rate Limiting:</strong> External APIs have rate limits. The application includes
+                appropriate timeout handling and user-agent headers to be a good API citizen.
+            </div>
+        </section>
+
+        <section id="components">
+            <h2>🧩 Core Components</h2>
+
+            <div class="component-grid">
+                <div class="component-card">
+                    <h4>🌐 Data Acquisition</h4>
+                    <p>
+                        Fetches geographic data from OpenStreetMap via Overpass API. Supports multiple
+                        download methods and includes robust error handling.
+                    </p>
+                    <p><strong>Module:</strong> <code>retrieve_data.rs</code></p>
+                </div>
+
+                <div class="component-card">
+                    <h4>📊 OSM Parser</h4>
+                    <p>
+                        Deserializes OSM JSON data into structured Rust types. Handles nodes, ways, and
+                        relations with their tags and relationships.
+                    </p>
+                    <p><strong>Module:</strong> <code>osm_parser.rs</code></p>
+                </div>
+
+                <div class="component-card">
+                    <h4>📐 Coordinate System</h4>
+                    <p>
+                        Transforms geographic coordinates (lat/lng) to Minecraft coordinates (x/z) with
+                        configurable scaling and projection.
+                    </p>
+                    <p><strong>Module:</strong> <code>coordinate_system/</code></p>
+                </div>
+
+                <div class="component-card">
+                    <h4>🏗️ Element Processors</h4>
+                    <p>
+                        Modular processors for different OSM features: buildings, roads, water, vegetation,
+                        and more. Each processor is independent and testable.
+                    </p>
+                    <p><strong>Module:</strong> <code>element_processing/</code></p>
+                </div>
+
+                <div class="component-card">
+                    <h4>🗺️ Map Transformation</h4>
+                    <p>
+                        Applies custom transformations to OSM data before generation. Configurable via JSON
+                        for flexibility.
+                    </p>
+                    <p><strong>Module:</strong> <code>map_transformation/</code></p>
+                </div>
+
+                <div class="component-card">
+                    <h4>⛰️ Elevation Data</h4>
+                    <p>
+                        Fetches and processes real-world elevation data from AWS Terrarium tiles. Applies
+                        smoothing and outlier filtering.
+                    </p>
+                    <p><strong>Module:</strong> <code>elevation_data.rs</code></p>
+                </div>
+
+                <div class="component-card">
+                    <h4>🌍 World Editor</h4>
+                    <p>
+                        Manages Minecraft world files. Supports both Java Anvil format and Bedrock LevelDB
+                        format with NBT serialization.
+                    </p>
+                    <p><strong>Module:</strong> <code>world_editor/</code></p>
+                </div>
+
+                <div class="component-card">
+                    <h4>🎨 Map Renderer</h4>
+                    <p>
+                        Generates 2D preview images of generated worlds. Creates top-down maps showing block
+                        colors for visual verification.
+                    </p>
+                    <p><strong>Module:</strong> <code>map_renderer.rs</code></p>
+                </div>
+
+                <div class="component-card">
+                    <h4>🎮 GUI Interface</h4>
+                    <p>
+                        Tauri-based desktop application with interactive map selection, settings configuration,
+                        and real-time progress tracking.
+                    </p>
+                    <p><strong>Module:</strong> <code>gui.rs</code></p>
+                </div>
+            </div>
+
+            <h3>Component Dependencies</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Component</th>
+                        <th>Dependencies</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>OSM Parser</td>
+                        <td>Coordinate System, Clipping</td>
+                        <td>Convert raw data to usable structures</td>
+                    </tr>
+                    <tr>
+                        <td>Element Processors</td>
+                        <td>World Editor, Block Definitions</td>
+                        <td>Generate Minecraft structures</td>
+                    </tr>
+                    <tr>
+                        <td>World Editor</td>
+                        <td>Ground Data, Coordinate System</td>
+                        <td>Write blocks to world files</td>
+                    </tr>
+                    <tr>
+                        <td>Data Processing</td>
+                        <td>All core components</td>
+                        <td>Orchestrate generation pipeline</td>
+                    </tr>
+                    <tr>
+                        <td>GUI</td>
+                        <td>Data Processing, Progress</td>
+                        <td>User interaction and feedback</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="dataflow">
+            <h2>🔄 Data Flow Pipeline</h2>
+
+            <h3>Generation Process</h3>
+            <p>
+                The world generation process follows a well-defined pipeline with seven main stages. Each stage
+                is responsible for a specific transformation of the data.
+            </p>
+
+            <div class="diagram">
+                <div style="text-align: left; max-width: 800px; margin: 0 auto;">
+                    <div style="margin: 15px 0;">
+                        <strong>[1/7]</strong> <span class="flow-item" style="margin: 0 10px;">Fetching Data</span>
+                        <p style="margin-left: 60px; color: #666;">Query Overpass API with bounding box</p>
+                    </div>
+
+                    <div style="margin: 15px 0;">
+                        <strong>[2/7]</strong> <span class="flow-item" style="margin: 0 10px;">Parsing Data</span>
+                        <p style="margin-left: 60px; color: #666;">Deserialize JSON into Rust structures</p>
+                    </div>
+
+                    <div style="margin: 15px 0;">
+                        <strong>[3/7]</strong> <span class="flow-item" style="margin: 0 10px;">Transform Map</span>
+                        <p style="margin-left: 60px; color: #666;">Apply custom transformations</p>
+                    </div>
+
+                    <div style="margin: 15px 0;">
+                        <strong>[4/7]</strong> <span class="flow-item" style="margin: 0 10px;">Processing Data</span>
+                        <p style="margin-left: 60px; color: #666;">Route elements to processors</p>
+                    </div>
+
+                    <div style="margin: 15px 0;">
+                        <strong>[5/7]</strong> <span class="flow-item" style="margin: 0 10px;">Processing Terrain</span>
+                        <p style="margin-left: 60px; color: #666;">Generate structures and features</p>
+                    </div>
+
+                    <div style="margin: 15px 0;">
+                        <strong>[6/7]</strong> <span class="flow-item" style="margin: 0 10px;">Generating Ground</span>
+                        <p style="margin-left: 60px; color: #666;">Fill terrain layers and bedrock</p>
+                    </div>
+
+                    <div style="margin: 15px 0;">
+                        <strong>[7/7]</strong> <span class="flow-item" style="margin: 0 10px;">Saving World</span>
+                        <p style="margin-left: 60px; color: #666;">Write region files to disk</p>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Detailed Stage Breakdown</h3>
+
+            <h4>Stage 1: Data Fetching</h4>
+            <p>
+                The first stage retrieves OSM data for the specified bounding box. The system supports
+                multiple download methods for flexibility and reliability.
+            </p>
+            <pre><code>// Query</pre> construction
+let query = format!("[bbox:{},{},{},{}];",
+    bbox.min_lat, bbox.min_lng, bbox.max_lat, bbox.max_lng);
+
+// Download with timeout and retry logic
+let data = fetch_data_from_overpass(bbox, debug, downloader, save_file)?;</code></pre>
+
+            <h4>Stage 2: Data Parsing</h4>
+            <p>
+                Raw JSON is deserialized into structured Rust types. Coordinates are transformed from
+                geographic (lat/lng) to Minecraft (x/z) coordinates.
+            </p>
+            <pre><code>// Parse and transform
+let (parsed_elements, xzbbox) = osm_parser::parse_osm_data(
+    raw_data, bbox, scale, debug
+);
+
+// Elements are now in Minecraft coordinate space</code></pre>
+
+            <h4>Stage 3: Map Transformation</h4>
+            <p>
+                Custom transformations can be applied to preprocess the data. This is useful for filtering,
+                translating, or modifying elements before generation.
+            </p>
+
+            <h4>Stage 4-5: Element Processing</h4>
+            <p>
+                Elements are processed by priority, ensuring correct layering. Each element type is routed
+                to its specific processor module.
+            </p>
+            <pre><code>// Priority-based processing
+elements.sort_by_key(|e| get_priority(e));
+
+for element in elements {
+    match element {
+        ProcessedElement::Way(way) => {
+            if way.tags.contains_key("building") {
+                buildings::generate_buildings(&mut editor, way, args, None);
+            } else if way.tags.contains_key("highway") {
+                highways::generate_highways(&mut editor, element, args, &connectivity);
+            }
+            // ... more processors
+        }
+    }
+}</code></pre>
+
+            <h4>Stage 6: Ground Generation</h4>
+            <p>
+                After all features are placed, the ground layer is filled with grass, dirt, stone, and bedrock.
+            </p>
+
+            <h4>Stage 7: World Saving</h4>
+            <p>
+                Finally, all block data is serialized to region files in the appropriate format (Anvil or Bedrock).
+            </p>
+
+            <div class="success-box">
+                <strong>✅ Performance Optimization:</strong> The pipeline uses parallel processing where possible,
+                particularly in ground generation and element processing stages.
+            </div>
+        </section>
+
+        <section id="technologies">
+            <h2>🛠️ Technology Stack</h2>
+
+            <h3>Core Technologies</h3>
+            <div class="tech-stack">
+                <span class="tech-badge">Rust</span>
+                <span class="tech-badge">Tauri 2.0</span>
+                <span class="tech-badge">Rayon</span>
+                <span class="tech-badge">Serde</span>
+                <span class="tech-badge">Reqwest</span>
+                <span class="tech-badge">FastAnvil</span>
+                <span class="tech-badge">FastNBT</span>
+            </div>
+
+            <h3>Key Libraries</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Library</th>
+                        <th>Purpose</th>
+                        <th>Version</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>tauri</strong></td>
+                        <td>Desktop application framework</td>
+                        <td>2.x</td>
+                    </tr>
+                    <tr>
+                        <td><strong>serde</strong> / <strong>serde_json</strong></td>
+                        <td>Serialization/deserialization</td>
+                        <td>1.0</td>
+                    </tr>
+                    <tr>
+                        <td><strong>reqwest</strong></td>
+                        <td>HTTP client for API calls</td>
+                        <td>0.12</td>
+                    </tr>
+                    <tr>
+                        <td><strong>rayon</strong></td>
+                        <td>Parallel processing</td>
+                        <td>1.10</td>
+                    </tr>
+                    <tr>
+                        <td><strong>fastanvil</strong></td>
+                        <td>Minecraft Anvil format I/O</td>
+                        <td>0.32</td>
+                    </tr>
+                    <tr>
+                        <td><strong>fastnbt</strong></td>
+                        <td>NBT serialization</td>
+                        <td>2.6</td>
+                    </tr>
+                    <tr>
+                        <td><strong>geo</strong></td>
+                        <td>Geometric operations</td>
+                        <td>0.31</td>
+                    </tr>
+                    <tr>
+                        <td><strong>image</strong></td>
+                        <td>Map preview rendering</td>
+                        <td>0.25</td>
+                    </tr>
+                    <tr>
+                        <td><strong>clap</strong></td>
+                        <td>CLI argument parsing</td>
+                        <td>4.5</td>
+                    </tr>
+                    <tr>
+                        <td><strong>colored</strong></td>
+                        <td>Terminal color output</td>
+                        <td>3.0</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>External APIs</h3>
+            <ul>
+                <li>
+                    <strong>Overpass API:</strong>
+                    <code>https://overpass-api.de/api/interpreter</code>
+                    <br>Provides OSM data queries with geographic filtering
+                </li>
+                <li>
+                    <strong>AWS Terrarium:</strong>
+                    <code>https://s3.amazonaws.com/elevation-tiles-prod/terrarium/</code>
+                    <br>Supplies elevation data tiles in Terrarium format
+                </li>
+                <li>
+                    <strong>Nominatim:</strong>
+                    <code>https://nominatim.openstreetmap.org/</code>
+                    <br>Reverse geocoding for location names
+                </li>
+            </ul>
+
+            <div class="info-box">
+                <strong>📦 Build System:</strong> The project uses Cargo for dependency management and building.
+                Tauri handles the GUI bundling and platform-specific packaging.
+            </div>
+        </section>
+
+        <section id="design-principles">
+            <h2>💡 Design Principles</h2>
+
+            <h3>1. Modularity</h3>
+            <p>
+                All components are cleanly separated into distinct modules with well-defined interfaces.
+                Element processors are independent and can be developed/tested in isolation.
+            </p>
+
+            <h3>2. Performance First</h3>
+            <p>
+                The application is optimized for handling large geographic areas efficiently:
+            </p>
+            <ul>
+                <li>Early bbox clipping reduces memory usage</li>
+                <li>Parallel processing with rayon</li>
+                <li>Efficient data structures (HashMap for O(1) lookups)</li>
+                <li>Lazy evaluation where possible</li>
+            </ul>
+
+            <h3>3. Error Handling</h3>
+            <p>
+                Robust error handling throughout:
+            </p>
+            <ul>
+                <li>Result types for recoverable errors</li>
+                <li>Graceful degradation when possible</li>
+                <li>Informative error messages for users</li>
+                <li>Logging for debugging</li>
+            </ul>
+
+            <h3>4. Extensibility</h3>
+            <p>
+                New features can be added easily:
+            </p>
+            <ul>
+                <li>Add new element processors without changing core code</li>
+                <li>Custom transformations via JSON configuration</li>
+                <li>Plugin-friendly architecture</li>
+            </ul>
+
+            <h3>5. Cross-Platform Compatibility</h3>
+            <p>
+                The application runs on Windows, macOS, and Linux with platform-specific optimizations
+                where needed.
+            </p>
+
+            <div class="success-box">
+                <strong>✨ Future-Proof:</strong> The architecture is designed to accommodate future Minecraft
+                versions and new OSM features with minimal changes to the core system.
+            </div>
+        </section>
+
+        <footer>
+            <p>
+                <strong>Arnis Architecture Documentation</strong> |
+                Version 2.4.0 |
+                <a href="https://github.com/louis-e/arnis" target="_blank">GitHub Repository</a>
+            </p>
+            <p>Copyright © 2022-2025 Louis Erbkamm | Licensed under Apache-2.0</p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arnis Element Processing Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            margin: -20px -20px 30px -20px;
+            border-radius: 0 0 10px 10px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        nav {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        nav a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+
+        nav a:hover {
+            color: #764ba2;
+        }
+
+        h2 {
+            color: #667eea;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            font-size: 2em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            color: #764ba2;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        h4 {
+            color: #555;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .warning-box {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .success-box {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .processor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .processor-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #e0e0e0;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .processor-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+
+        .processor-card h4 {
+            color: #667eea;
+            margin-top: 0;
+        }
+
+        .tag-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            margin: 5px 5px 5px 0;
+            font-weight: 600;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 20px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        .priority-badge {
+            display: inline-block;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+            margin: 5px;
+        }
+
+        .priority-1 { background: #f44336; color: white; }
+        .priority-2 { background: #ff9800; color: white; }
+        .priority-3 { background: #ffc107; color: black; }
+        .priority-4 { background: #4caf50; color: white; }
+        .priority-5 { background: #2196f3; color: white; }
+        .priority-6 { background: #9c27b0; color: white; }
+
+        footer {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+            text-align: center;
+            color: #666;
+        }
+
+        .flow-diagram {
+            background: white;
+            border: 2px solid #ddd;
+            padding: 30px;
+            margin: 30px 0;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .step-box {
+            display: inline-block;
+            padding: 15px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 10px;
+            border-radius: 8px;
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚙️ Element Processing Documentation</h1>
+            <p class="subtitle">How Arnis transforms OSM data into Minecraft structures</p>
+        </header>
+
+        <nav>
+            <ul>
+                <li><a href="architecture.html">Architecture</a></li>
+                <li><a href="coordinate-system.html">Coordinates</a></li>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#processors">Processors</a></li>
+                <li><a href="#priority">Priority System</a></li>
+                <li><a href="#algorithms">Algorithms</a></li>
+                <li><a href="world-generation.html">Generation</a></li>
+            </ul>
+        </nav>
+
+        <section id="overview">
+            <h2>📋 Overview</h2>
+
+            <p>
+                Element processing is the core transformation engine of Arnis. It takes parsed OSM data
+                (nodes, ways, and relations) and converts them into Minecraft blocks. Each type of real-world
+                feature (buildings, roads, water, etc.) has a dedicated processor module that handles its
+                specific generation logic.
+            </p>
+
+            <div class="info-box">
+                <strong>🎯 Goal:</strong> Transform abstract OSM tags and coordinates into tangible Minecraft
+                structures that accurately represent real-world features while maintaining good performance
+                and visual quality.
+            </div>
+
+            <h3>Processing Pipeline</h3>
+            <div class="flow-diagram">
+                <div class="step-box">Parse OSM Elements</div>
+                <div style="font-size: 2em; color: #667eea;">↓</div>
+                <div class="step-box">Sort by Priority</div>
+                <div style="font-size: 2em; color: #667eea;">↓</div>
+                <div class="step-box">Route to Processors</div>
+                <div style="font-size: 2em; color: #667eea;">↓</div>
+                <div class="step-box">Generate Blocks</div>
+                <div style="font-size: 2em; color: #667eea;">↓</div>
+                <div class="step-box">Save to World</div>
+            </div>
+
+            <h3>Element Types</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>OSM Type</th>
+                        <th>Description</th>
+                        <th>Example Use Cases</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Node</strong></td>
+                        <td>Single point with lat/lng</td>
+                        <td>Trees, benches, doors, streetlights</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Way</strong></td>
+                        <td>Ordered list of nodes</td>
+                        <td>Roads, building outlines, rivers, walls</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Relation</strong></td>
+                        <td>Group of nodes/ways with roles</td>
+                        <td>Multipolygon buildings, complex water bodies</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="processors">
+            <h2>🔧 Processor Modules</h2>
+
+            <p></p>
+                Arnis uses a modular processor architecture where each module handles a specific category
+                of real-world features. Processors are independent and can be developed/tested in isolation.
+            </p>
+
+            <div class="processor-grid">
+                <div class="processor-card">
+                    <h4>🏢 Buildings</h4>
+                    <p><strong>Module:</strong> <code>buildings.rs</code></p>
+                    <p>Generates structures with walls, floors, roofs, and optional interiors.</p>
+                    <div>
+                        <span</div> class="tag-badge">building=*</span>
+                        <span class="tag-badge">building:part=*</span>
+                    </div>
+                    <p style="margin-top: 10px;"><strong>Features:</strong></p>
+                    <ul style="font-size: 0.9em;">
+                        <li>Multiple roof types (gabled, hipped, flat, etc.)</li>
+                        <li>Material detection from tags</li>
+                        <li>Height estimation</li>
+                        <li>Interior generation</li>
+                        <li>Courtyard support</li>
+                    </ul>
+                </div>
+
+                <div class="processor-card">
+                    <h4>🛣️ Highways</h4>
+                    <p><strong>Module:</strong> <code>highways.rs</code></p>
+                    <p>Creates roads, paths, and intersections with connectivity awareness.</p>
+                    <div>
+                        <span class="tag-badge">highway=*</span>
+                        <span class="tag-badge">aeroway=*</span>
+                    </div>
+                    <p style="margin-top: 10px;"><strong>Features:</strong></p>
+                    <ul style="font-size: 0.9em;">
+                        <li>Width based on road type</li>
+                        <li>Surface material mapping</li>
+                        <li>Intersection detection</li>
+                        <li>Sidewalk generation</li>
+                        <li>Airport runways</li>
+                    </ul>
+                </div>
+
+                <div class="processor-card">
+                    <h4>💧 Water Areas</h4>
+                    <p><strong>Module:</strong> <code>water_areas.rs</code></p>
+                    <p>Generates lakes, rivers, and oceans using flood-fill algorithms.</p>
+                    <div>
+                        <span class="tag-badge">water=*</span>
+                        <span class="tag-badge">natural=water</span>
+                    </div>
+                    <p style="margin-top: 10px;"><strong>Features:</strong></p>
+                    <ul style="font-size: 0.9em;">
+                        <li>Multipolygon support</li>
+                        <li>Island detection</li>
+                        <li>Flood-fill with timeout</li>
+                        <li>Water depth</li>
+                    </ul>
+                </div>
+
+                <div class="processor-card">
+                    <h4>🌊 Waterways</h4>
+                    <p><strong>Module:</strong> <code>waterways.rs</code></p>
+                    <p>Creates rivers, streams, and canals as linear features.</p>
+                    <div>
+                        <span class="tag-badge">waterway=river</span>
+                        <span class="tag-badge">waterway=stream</span>
+                    </div>
+                    <p style="margin-top: 10px;"><strong>Features:</strong></p>
+                    <ul style="font-size: 0.9em;">
+                        <li>Width variation by type</li>
+                        <li>Water block placement</li>
+                        <li>Bank generation</li>
+                    </ul>
+                </div>
+
+                <div class="processor-card">
+                    <h4>🌳 Natural</h4> Features</h4>
+                    <p><strong>Module:</strong> <code>natural.rs</code></p>
+                    <p>Generates trees, forests, beaches, and other natural elements.</p>
+                    <div>
+                        <span class="tag-badge">natural=tree</span>
+                        <span class="tag-badge">natural=wood</span>
+                        <span class="tag-badge">natural=beach</span>
+                    </div>
+                    <p style="margin-top: 10px;"><strong>Features:</strong></p>
+                    <ul style="font-size: 0.9em;">
+                        <li>Multiple tree types</li>
+                        <li>Forest density</li>
+                        <li>Beach sand placement</li>
+                        <li>Rock formations</li>
+                    </ul>
+                </div>
+
+                <div class="processor-card">
+                    <h4>🏞️ Land Use</h4>
+                    <p><strong>Module:</strong> <code>landuse.rs</code></p>
+                    <p>Handles parks, farmland, industrial areas, and other land classifications.</p>
+                    <div>
+                        <span class="tag-badge">landuse=*</span>
+                    </div>
+                    <p style="margin-top: 10px;"><strong>Features:</strong></p>
+                    <ul style="font-size: 0.9em;">
+                        <li>Grass for parks</li>
+                        <li>Farmland blocks</li>
+                        <li>Industrial surfaces</li>
+                        <li>Area filling</li>
+                    </ul>
+                </div>
+
+                <div class="processor-card">
+                    <h4>🎪 Leisure</h4>
+                    <p><strong>Module:</strong> <code>leisure.rs</code></p>
+                    <p>Creates recreational areas like playgrounds, sports fields, and swimming pools.</p>
+                    <div>
+                        <span class="tag-badge">leisure=*</span>
+                    </div>
+                    <p style="margin-top: 10px;"><strong>Features:</strong></p>
+                    <ul style="font-size: 0.9em;">
+                        <li>Swimming pools</li>
+                        <li>Sports field surfaces</li>
+                        <li>Park elements</li>
+                        <li>Playground equipment</li>
+                    </ul>
+                </div>
+
+                <div class="processor-card">
+                    <h4>🚧 Barriers</h4>
+                    <p><strong>Module:</strong> <code>barriers.rs</code></p>
+                    <p>Generates walls, fences, gates, and other boundary features.</p>
+                    <div>
+                        <span class="tag-badge">barrier=*</span>
+                    </div>
+                    <p style="margin-top: 10px;"><strong>Features:</strong></p>
+                    <ul style="font-size: 0.9em;">
+                        <li>Wall generation</li>
+                        <li>Fence types</li>
+                        <li>Gate placement</li>
+                        <li>Height variation</li>
+                    </ul>
+                </div>
+
+                <div class="processor-card">
+                    <h4>🚂 Railways</h4>
+                    <p><strong>Module:</strong> <code>railways.rs</code></p>
+                    <p>Creates train tracks and roller coasters.</p>
+                    <div>
+                        <span class="tag-badge">railway=*</span>
+                        <span class="tag-badge">roller_coaster=*</span>
+                    </div>
+                    <p style="margin-top: 10px;"><strong>Features:</strong></p>
+                    <ul style="font-size: 0.9em;">
+                        <li>Rail placement</li>
+                        <li>Powered rails</li>
+                        <li>Track curves</li>
+                        <li>Roller coaster tracks</li>
+                    </ul>
+                </div>
+
+                <div class="processor-card">
+                    <h4>🏪 Amenities</h4>
+                    <p><strong>Module:</strong> <code>amenities.rs</code></p>
+                    <p>Places points of interest like benches, fountains, and parking.</p>
+                    <div>
+                        <span class="tag-badge">amenity=*</span>
+                    </div>
+                    <p style="margin-top: 10px;"><strong>Features:</strong></p>
+                    <ul style="font-size: 0.9em;">
+                        <li>Bench placement</li>
+                        <li>Fountain generation</li>
+                        <li>Parking lots</li>
+                        <li>Street furniture</li>
+                    </ul>
+                </div>
+
+                <div class="processor-card">
+                    <h4>🏭 Man-Made</h4>
+                    <p><strong>Module:</strong> <code>man_made.rs</code></p>
+                    <p>Handles artificial structures like towers, chimneys, and piers.</p>
+                    <div>
+                        <span class="tag-badge">man_made=*</span>
+                    </div>
+                    <p style="margin-top: 10px;"><strong>Features:</strong></p>
+                    <ul style="font-size: 0.9em;">
+                        <li>Tower structures</li>
+                        <li>Chimney generation</li>
+                        <li>Pier construction</li>
+                        <li>Solar panels</li>
+                    </ul>
+                </div>
+
+                <div class="processor-card">
+                    <h4>🚪 Doors</h4>
+                    <p><strong>Module:</strong> <code>doors.rs</code></p>
+                    <p>Places doors and entrances in buildings.</p>
+                    <div>
+                        <span class="tag-badge">door=*</span>
+                        <span class="tag-badge">entrance=*</span>
+                    </div>
+                    <p style="margin-top: 10px;"><strong>Features:</strong></p>
+                    <ul style="font-size: 0.9em;">
+                        <li>Door placement</li>
+                        <li>Entry detection</li>
+                        <li>Material selection</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="priority">
+            <h2>⚡ Priority System</h2>
+
+            <p>
+                Elements are processed in a specific order to ensure correct layering. Features processed
+                later can overwrite earlier ones, so the priority system is crucial for visual accuracy.
+            </p>
+
+            <h3>Priority Order</h3>
+            <div style="margin: 30px 0; text-align: center;">
+                <div class="priority-badge priority-1">1. Entrance (Highest)</div>
+                <div class="priority-badge priority-2">2. Building</div>
+                <div class="priority-badge priority-3">3. Highway</div>
+                <div class="priority-badge priority-4">4. Waterway</div>
+                <div class="priority-badge priority-5">5. Water</div>
+                <div class="priority-badge priority-6">6. Barrier (Lowest)</div>
+            </div>
+
+            <h3>Priority Rationale</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Priority</th>
+                        <th>Element Type</th>
+                        <th>Reasoning</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td><strong>Entrances/Doors</strong></td>
+                        <td>Must be placed last to prevent being overwritten by walls or roads</td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td><strong>Buildings</strong></td>
+                        <td>Large structures that should overlay most terrain features</td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td><strong>Highways</strong></td>
+                        <td>Roads connect buildings and should be visible, but not cover structures</td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td><strong>Waterways</strong></td>
+                        <td>Linear water features like rivers</td>
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        <td><strong>Water Areas</strong></td>
+                        <td>Large water bodies serve as base terrain</td>
+                    </tr>
+                    <tr>
+                        <td>6</td>
+                        <td><strong>Barriers</strong></td>
+                        <td>Walls and fences are processed early as boundary features</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <pre><code>// Priority</pre> implementation
+const PRIORITY_ORDER: [&str; 6] = [
+    "entrance", "building", "highway", "waterway", "water", "barrier",
+];
+
+pub fn get_priority(element: &ProcessedElement) -> usize {
+    for (i, &tag) in PRIORITY_ORDER.iter().enumerate() {
+        if element.tags().contains_key(tag) {
+            return i;
+        }
+    }
+    PRIORITY_ORDER.len()  // Default priority for unmatched elements
+}
+
+// Sort elements before processing
+elements.sort_by_key(|element| get_priority(element));</code></pre>
+
+            <div class="warning-box">
+                <strong></strong>⚠️ Priority Conflicts:</strong> When an element has multiple tags from different
+                priority levels, the highest priority (lowest number) takes precedence.
+            </div>
+        </section>
+
+        <section id="algorithms">
+            <h2>🧮 Core Algorithms</h2>
+
+            <h3>Building Generation</h3>
+            <p>
+                Building generation is one of the most complex processors, handling multiple roof types,
+                materials, and interior layouts.
+            </p>
+
+            <h4>Algorithm Steps</h4>
+            <ol>
+                <li><strong>Parse building outline</strong> from way or relation nodes</li>
+                <li><strong>Determine height</strong> from tags or estimate based on levels</li>
+                <li><strong>Select materials</strong> based on building:material tag</li>
+                <li><strong>Generate walls</strong> along the outline</li>
+                <li><strong>Create floors</strong> for multi-story buildings</li>
+                <li><strong>Generate roof</strong> based on roof:shape tag</li>
+                <li><strong>Add interior</strong> (if enabled) with rooms and stairs</li>
+                <li><strong>Handle courtyards</strong> (inner ways in multipolygon)</li>
+            </ol>
+
+            <pre><code>// Building generation example
+pub fn generate_buildings(
+    editor: &mut WorldEditor,
+    way: &ProcessedWay,
+    args: &Args,
+    override_material: Option<Block>,
+) {
+    // Extract tags
+    let height = estimate_height(&way.tags);
+    let material = select_material(&way.tags, override_material);
+    let roof_shape = way.tags.get("roof:shape");
+
+    // Get bounding box
+    let (min_x, max_x, min_z, max_z) = get_bounds(&way.nodes);
+
+    // Generate walls
+    for node_window in way.nodes.windows(2) {
+        draw_wall(editor, &node_window[0], &node_window[1], height, material);
+    }
+
+    // Generate floors
+    if args.interior && height > 3 {
+        generate_interior(editor, way, height, material);
+    }
+
+    // Generate roof
+    if args.roof {
+        let roof_type = parse_roof_type(roof_shape);
+        generate_roof(editor, roof_type, min_x, max_x, min_z, max_z, height);
+    }
+}</code></pre>
+
+            <h3>Roof Generation</h3>
+            <p>Arnis supports multiple roof types with different generation algorithms:</p>
+
+            <h4>Gabled Roof</h4>
+            <pre><code>// Two sloping sides meeting at a ridge
+fn generate_gabled_roof(
+    editor: &mut WorldEditor,
+    min_x: i32, max_x: i32,
+    min_z: i32, max_z: i32,
+    base_height: i32,
+    roof_height: i32,
+    roof_block: Block,
+) {
+    let width = max_x - min_x;
+    let ridge_offset = width / 2;
+
+    for x in min_x..=max_x {
+        let distance_from_center = (x - min_x - ridge_offset).abs();
+        let slope_height = roof_height - (distance_from_center * roof_height / ridge_offset);
+
+        for z in min_z..=max_z {
+            let y = base_height + slope_height;
+            editor.set_block(roof_block, x, y, z, None, None);
+        }
+    }
+}</code></pre>
+
+            <h4>Pyramidal Roof</h4>
+            <pre><code>// All sides slope to a central point
+fn generate_pyramidal_roof(
+    editor: &mut WorldEditor,
+    min_x: i32, max_x: i32,
+    min_z: i32, max_z: i32,
+    base_height: i32,
+    roof_height: i32,
+    roof_block: Block,
+) {
+    let center_x = (min_x + max_x) / 2;
+    let center_z = (min_z + max_z) / 2;
+
+    for y_offset in 0..roof_height {
+        let shrink = y_offset;
+
+        for x in (min_x + shrink)..=(max_x - shrink) {
+            for z in (min_z + shrink)..=(max_z - shrink) {
+                let y = base_height + y_offset;
+                editor.set_block(roof_block, x, y, z, None, None);
+            }
+        }
+    }
+}</code></pre>
+
+            <h3>Water Area Flood-Fill</h3>
+            <p>
+                Water bodies use a flood-fill algorithm to fill enclosed areas. This is essential for
+                correctly rendering lakes and oceans with islands.
+            </p>
+
+            <pre><code>pub fn flood_fill_water(
+    editor: &mut WorldEditor,
+    start_x: i32,
+    start_z: i32,
+    boundary: &HashSet<(i32, i32)>,
+    timeout: Option<Duration>,
+) {
+    let start_time = Instant::now();
+    let mut queue = VecDeque::new();
+    let mut visited = HashSet::new();
+
+    queue.push_back((start_x, start_z));
+
+    while let Some((x, z)) = queue.pop_front() {
+        // Check timeout
+        if let Some(t) = timeout {
+            if start_time.elapsed() > t {
+                eprintln!("Flood-fill timeout reached");
+                break;
+            }
+        }
+
+        // Skip if already visited or on boundary
+        if visited.contains(&(x, z)) || boundary.contains(&(x, z)) {
+            continue;
+        }
+
+        visited.insert((x, z));
+
+        // Place water block
+        editor.set_block(WATER, x, 0, z, None, None);
+
+        // Add neighbors to queue
+        for (dx, dz) in [(-1, 0), (1, 0), (0, -1), (0, 1)] {
+            queue.push_back((x + dx, z + dz));
+        }
+    }
+}</code></pre>
+
+            <div class="success-box">
+                <strong>✅ Optimization:</strong> The flood-fill algorithm uses a timeout to prevent
+                infinite loops in case of errors or extremely large water bodies.
+            </div>
+
+            <h3>Highway Connectivity</h3>
+            <p>
+                The highway processor builds a connectivity graph to detect intersections and ensure
+                roads connect properly.
+            </p>
+
+            <pre><code>pub fn build_highway_connectivity_map(
+    elements: &[ProcessedElement]
+) -> HashMap<u64, Vec<u64>> {
+    let mut connectivity: HashMap<u64, Vec<u64>> = HashMap::new();
+
+    for element in elements {
+        if let ProcessedElement::Way(way) = element {
+            if !way.tags.contains_key("highway") {
+                continue;
+            }
+
+            // Connect each node to its neighbors in the way
+            for window in way.nodes.windows(2) {
+                let node1_id = window[0].id;
+                let node2_id = window[1].id;
+
+                connectivity.entry(node1_id)
+                    .or_default()
+                    .push(node2_id);
+
+                connectivity.entry(node2_id)
+                    .or_default()
+                    .push(node1_id);
+            }
+        }
+    }
+
+    connectivity
+}
+
+// Use connectivity to detect intersections
+pub fn generate_highways(
+    editor: &mut WorldEditor,
+    element: &ProcessedElement,
+    args: &Args,
+    connectivity: &HashMap<u64, Vec<u64>>,
+) {
+    // ... process road
+
+    // Check if node is an intersection
+    let connections = connectivity.get(&node.id).map(|v| v.len()).unwrap_or(0);
+    if connections >= 3 {
+        create_intersection(editor, node, connections);
+    }
+}</code></pre>
+
+            <h3>Bresenham's Line Algorithm</h3>
+            <p>
+                Used for drawing straight lines between nodes (roads, walls, etc.) efficiently.
+            </p>
+
+            <pre><code>pub fn bresenham_line(
+    x0: i32, z0: i32,
+    x1: i32, z1: i32
+) -> Vec<(i32, i32)> {
+    let mut points = Vec::new();
+
+    let dx = (x1 - x0).abs();
+    let dz = (z1 - z0).abs();
+    let sx = if x0 < x1 { 1 } else { -1 };
+    let sz = if z0 < z1 { 1 } else { -1 };
+    let mut err = dx - dz;
+
+    let mut x = x0;
+    let mut z = z0;
+
+    loop {
+        points.push((x, z));
+
+        if x == x1 && z == z1 {
+            break;
+        }
+
+        let e2 = 2 * err;
+        if e2 > -dz {
+            err -= dz;
+            x += sx;
+        }
+        if e2 < dx {
+            err += dx;
+            z += sz;
+        }
+    }
+
+    points
+}</code></pre>
+        </section>
+
+        <section id="material-selection">
+            <h2>🎨 Material Selection</h2>
+
+            <h3>OSM Tag Mapping</h3>
+            <p>
+                Arnis maps OSM material tags to appropriate Minecraft blocks. This ensures visual
+                consistency and realism.
+            </p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>OSM Tag</th>
+                        <th>OSM Value</th>
+                        <th>Minecraft Block</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>building:material</td>
+                        <td>brick</td>
+                        <td>BRICK</td>
+                    </tr>
+                    <tr>
+                        <td>building:material</td>
+                        <td>wood</td>
+                        <td>OAK_PLANKS</td>
+                    </tr>
+                    <tr>
+                        <td>building:material</td>
+                        <td>concrete</td>
+                        <td>CONCRETE</td>
+                    </tr>
+                    <tr>
+                        <td>building:material</td>
+                        <td>stone</td>
+                        <td>STONE</td>
+                    </tr>
+                    <tr>
+                        <td>surface</td>
+                        <td>asphalt</td>
+                        <td>GRAY_CONCRETE</td>
+                    </tr>
+                    <tr>
+                        <td>surface</td>
+                        <td>concrete</td>
+                        <td>WHITE_CONCRETE</td>
+                    </tr>
+                    <tr>
+                        <td>surface</td>
+                        <td>gravel</td>
+                        <td>GRAVEL</td>
+                    </tr>
+                    <tr>
+                        <td>surface</td>
+                        <td>grass</td>
+                        <td>GRASS_BLOCK</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Material Selection Logic</h3>
+            <pre><code>fn select_building_material(tags: &HashMap<String, String>) -> Block {
+    // Check explicit material tag
+    if let Some(material) = tags.get("building:material") {
+        return match material.as_str() {
+            "brick" => BRICK,
+            "wood" => OAK_PLANKS,
+            "concrete" | "cement" => CONCRETE,
+            "stone" => STONE,
+            "glass" => GLASS,
+            "metal" => IRON_BLOCK,
+            _ => STONE,  // Default
+        };
+    }
+
+    // Infer from building type
+    if let Some(building_type) = tags.get("building") {
+        return match building_type.as_str() {
+            "house" | "residential" => OAK_PLANKS,
+            "commercial" | "retail" => BRICK,
+            "industrial" => IRON_BLOCK,
+            "church" | "cathedral" => STONE_BRICKS,
+            _ => STONE,
+        };
+    }
+
+    STONE  // Fallback default
+}</code></pre>
+
+            <h3>Roof Material Selection</h3>
+            <pre><code>fn select_roof_material(
+    tags: &HashMap<String, String>,
+    wall_block: Block
+) -> Block {
+    // Check explicit roof material
+    if let Some(roof_mat) = tags.get("roof:material") {
+        return match roof_mat.as_str() {
+            "tiles" | "tile" => RED_TERRACOTTA,
+            "slate" => GRAY_TERRACOTTA,
+            "metal" => IRON_BLOCK,
+            "thatch" => HAY_BLOCK,
+            "concrete" => GRAY_CONCRETE,
+            _ => BRICK,
+        };
+    }
+
+    // Check roof color
+    if let Some(color) = tags.get("roof:colour") {
+        if let Some(block) = color_to_block(color) {
+            return block;
+        }
+    }
+
+    // Default: use wall material or brick
+    match wall_block {
+        OAK_PLANKS => OAK_LOG,
+        BRICK => BRICK,
+        STONE => STONE_BRICK_SLAB,
+        _ => BRICK,
+    }
+}</code></pre>
+        </section>
+
+        <section id="best-practices">
+            <h2>✨ Best Practices</h2></h2>
+
+            <h3>Performance Optimization</h3>
+            <ul>
+                <li><strong>Batch Operations:</strong> Use <code>fill_blocks()</code> instead of individual <code>set_block()</code> calls when possible</li>
+                <li><strong>Early Returns:</strong> Check for invalid data and return early to avoid unnecessary processing</li>
+                <li><strong>Caching:</strong> Store expensive calculations (like connectivity maps) rather than recalculating</li>
+                <li><strong>Bbox Clipping:</strong> Only process elements within the generation area</li>
+            </ul>
+
+            <h3>Code Organization</h3>
+            <ul>
+                <li><strong>Single Responsibility:</strong> Each processor should handle one category of features</li>
+                <li><strong>Helper Functions:</strong> Extract common logic into reusable functions</li>
+                <li><strong>Clear Naming:</strong> Use descriptive names for functions and variables</li>
+                <li><strong>Documentation:</strong> Comment complex algorithms and tag mappings</li>
+            </ul>
+
+            <h3>Error Handling</h3>
+            <ul>
+                <li><strong>Graceful Degradation:</strong> Handle missing tags with sensible defaults</li>
+                <li><strong>Validation:</strong> Check data ranges before processing</li>
+                <li><strong>Logging:</strong> Warn about unusual situations without stopping generation</li>
+                <li><strong>Timeouts:</strong> Implement timeouts for potentially infinite loops (like flood-fill)</li>
+            </ul>
+
+            <div class="info-box">
+                <strong>💡 Tip:</strong> When adding a new processor, start by copying an existing one with
+                similar complexity and adapt it to your needs. This ensures consistent code style and proper
+                error handling.
+            </div>
+        </section>
+
+        <section id="adding-processor">
+            <h2>➕ Adding a New Processor</h2>
+
+            <h3>Step-by-Step Guide</h3>
+            <ol>
+                <li>
+                    <strong>Create Module File</strong>
+                    <pre><code>// src/element_processing/my_feature.rs
+use crate::world_editor::WorldEditor;
+use crate::osm_parser::{ProcessedElement, ProcessedWay, ProcessedNode};
+use crate::block_definitions::*;
+
+pub fn generate_my_feature(
+    editor: &mut WorldEditor,
+    element: &ProcessedElement,
+) {
+    match element {
+        ProcessedElement::Way(way) => generate_from_way(editor, way),
+        ProcessedElement::Node(node) => generate_from_node(editor, node),
+        _ => {}
+    }
+}
+
+fn generate_from_way(editor: &mut WorldEditor, way: &ProcessedWay) {
+    // Implementation
+}
+
+fn generate_from_node(editor: &mut WorldEditor, node: &ProcessedNode) {
+    // Implementation
+}</code></pre>
+                </li>
+                <li>
+                    <strong>Register in mod.rs</strong>
+                    <pre><code>// src/element_processing/mod.rs
+pub mod my_feature;</code></pre>
+                </li>
+                <li>
+                    <strong>Add to Processing Pipeline</strong>
+                    <pre><code>// src/data_processing.rs
+match element {
+    ProcessedElement::Way(way) => {
+        // ... existing processors
+        else if way.tags.contains_key("my_tag") {
+            my_feature::generate_my_feature(&mut editor, element);
+        }
+    }
+}</code></pre>
+                </li>
+                <li>
+                    <strong>Add Priority (if needed)</strong>
+                    <pre><code>// src/osm_parser.rs
+const PRIORITY_ORDER: [&str; 7] = [
+    "entrance", "building", "my_tag", "highway", "waterway", "water", "barrier",
+];</code></pre>
+                </li>
+                <li>
+                    <strong>Test Your Processor</strong>
+                    <pre><code>#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_my_feature_generation() {
+        // Test implementation
+    }
+}</code></pre>
+                </li>
+            </ol>
+        </section>
+
+        <footer>
+            <p>
+                <strong>Arnis Element Processing Documentation</strong> |
+                Version 2.4.0 |
+                <a href="https://github.com/louis-e/arnis" target="_blank">GitHub Repository</a>
+            </p>
+            <p>Copyright © 2022-2025 Louis Erbkamm | Licensed under Apache-2.0</p>
+        </footer>
+    </div>
+</body>
+</html>

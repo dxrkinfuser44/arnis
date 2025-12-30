@@ -17,6 +17,59 @@ Download the [latest release](https://github.com/louis-e/arnis/releases/) or [co
 Choose your area on the map using the rectangle tool and select your Minecraft world - then simply click on <i>Start Generation</i>!
 Additionally, you can customize various generation settings, such as world scale, spawn point, or building interior generation.
 
+### 💾 Pre-Caching Feature
+
+For large areas or lower-end systems, Arnis now supports **pre-caching** data without generating the world immediately. This allows you to:
+- Download data when you have internet access and generate later
+- Avoid re-downloading if generation crashes on large areas
+- Generate multiple world variations from the same cached data
+
+**CLI Usage:**
+```bash
+# Cache data only
+arnis --cache-only --bbox="40.7,-74.0,40.8,-73.9" --scale=1.0 --terrain
+
+# List cached regions
+arnis --list-caches
+
+# Generate from cache
+arnis --from-cache <cache_id> --path="path/to/minecraft/world"
+```
+
+See [PRE_CACHING.md](PRE_CACHING.md) for complete documentation and [examples/](examples/) for batch caching scripts.
+
+### ⚡ Advanced Features
+
+**New in v2.4.0+**: Major performance improvements for large areas!
+
+#### 🧩 Chunked Generation
+Automatically splits large areas (>4 km²) into smaller chunks for reliable generation on any system:
+- **No more crashes** on large areas
+- **Sequential processing** prevents memory issues
+- **Seamless results** with automatic chunk stitching
+- **Progress tracking** per chunk
+
+#### 🎨 GUI Cache Browser
+Visual interface for managing cached regions:
+- **Thumbnail previews** of cached data
+- **One-click generation** from cache
+- **Statistics dashboard** showing cache usage
+- **Batch management** (cleanup, delete, refresh)
+
+#### 🖼️ Preview Generation
+Automatic preview images during caching:
+- **Color-coded elements** (buildings, roads, natural features)
+- **Quick identification** of cached regions
+- **400×300 PNG** thumbnails
+
+#### ⏰ Auto-Expiration
+Smart cache management:
+- **30-day expiration** (configurable)
+- **Automatic cleanup** of old caches
+- **Disk space optimization**
+
+**Learn more**: [ADVANCED_FEATURES.md](ADVANCED_FEATURES.md)
+
 ## 📚 Documentation
 
 <img src="assets/git/documentation.png" width="100%" alt="Banner">

@@ -14,6 +14,14 @@ pub struct Ground {
 }
 
 impl Ground {
+    pub fn new(ground_level: i32, elevation_enabled: bool) -> Self {
+        Self {
+            elevation_enabled: false,
+            ground_level,
+            elevation_data: None,
+        }
+    }
+
     pub fn new_flat(ground_level: i32) -> Self {
         Self {
             elevation_enabled: false,

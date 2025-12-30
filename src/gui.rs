@@ -1,4 +1,5 @@
 use crate::args::Args;
+use crate::cache_manager::CacheMetadata;
 use crate::coordinate_system::cartesian::XZPoint;
 use crate::coordinate_system::geographic::{LLBBox, LLPoint};
 use crate::coordinate_system::transformation::CoordTransformer;
@@ -115,7 +116,14 @@ pub fn run_gui() {
             gui_get_version,
             gui_check_for_updates,
             gui_get_world_map_data,
-            gui_show_in_folder
+            gui_show_in_folder,
+            gui_list_caches,
+            gui_delete_cache,
+            gui_clear_caches,
+            gui_cache_only,
+            gui_generate_from_cache,
+            gui_get_cache_preview,
+            gui_cleanup_expired_caches
         ])
         .setup(|app| {
             let app_handle = app.handle();
@@ -1054,6 +1062,307 @@ fn gui_start_generation(
             emit_gui_error(&error_msg);
             // Session lock will be automatically released when the task fails
         }
+    });
+
+    Ok(())
+}
+
+/// Tauri command to list all cached regions
+#[tauri::command]
+fn gui_list_caches() -> Result<Vec<CacheMetadata>, String> {
+    use crate::cache_manager::{CacheManager, CacheMetadata};
+
+    let cache_manager = CacheManager::new()
+        .map_err(|e| format!("Failed to initialize cache manager: {}", e))?;
+
+    cache_manager.list_caches()
+}
+
+/// Tauri command to delete a specific cached region
+#[tauri::command]
+fn gui_delete_cache(cache_id: String) -> Result<(), String> {
+    use crate::cache_manager::CacheManager;
+
+    let cache_manager = CacheManager::new()
+        .map_err(|e| format!("Failed to initialize cache manager: {}", e))?;
+
+    cache_manager.delete_cache(&cache_id)
+}
+
+/// Tauri command to clear all cached regions
+#[tauri::command]
+fn gui_clear_caches() -> Result<(), String> {
+    use crate::cache_manager::CacheManager;
+
+    let cache_manager = CacheManager::new()
+        .map_err(|e| format!("Failed to initialize cache manager: {}", e))?;
+
+    cache_manager.clear_all_caches()
+}
+
+/// Tauri command to get cache preview image as base64
+#[tauri::command]
+fn gui_get_cache_preview(cache_id: String) -> Result<Option<String>, String> {
+    use crate::cache_manager::CacheManager;
+
+    let cache_manager = CacheManager::new()
+        .map_err(|e| format!("Failed to initialize cache manager: {}", e))?;
+
+    cache_manager.get_preview_base64(&cache_id)
+}
+
+/// Tauri command to cleanup expired caches
+#[tauri::command]
+fn gui_cleanup_expired_caches() -> Result<usize, String> {
+    use crate::cache_manager::CacheManager;
+
+    let cache_manager = CacheManager::new()
+        .map_err(|e| format!("Failed to initialize cache manager: {}", e))?;
+
+    cache_manager.cleanup_expired_caches()
+}
+
+/// Tauri command to pre-cache data only (no world generation)
+#[tauri::command]
+fn gui_cache_only(
+    bbox_text: String,
+    world_scale: f64,
+    terrain_enabled: bool,
+) -> Result<String, String> {
+    use crate::cache_manager::CacheManager;
+    use crate::coordinate_system::geographic::LLBBox;
+    use crate::retrieve_data;
+
+    let cache_manager = CacheManager::new()
+        .map_err(|e| format!("Failed to initialize cache manager: {}", e))?;
+
+    // Parse bounding box
+    let bbox = LLBBox::from_str(&bbox_text)
+        .map_err(|e| format!("Failed to parse bounding box: {}", e))?;
+
+    // Fetch OSM data
+    let raw_data = retrieve_data::fetch_data_from_overpass(bbox, false, "requests", None)
+        .map_err(|e| format!("Failed to fetch data: {}", e))?;
+
+    // Get area name for better cache identification
+    let center_lat = (bbox.min().lat() + bbox.max().lat()) / 2.0;
+    let center_lon = (bbox.min().lng() + bbox.max().lng()) / 2.0;
+    let area_name = retrieve_data::fetch_area_name(center_lat, center_lon)
+        .ok()
+        .flatten();
+
+    // TODO: Fetch elevation data if terrain_enabled
+    let elevation_data = None;
+
+    // Save cache (with 30 day expiration)
+    let cache_id = cache_manager.save_cache(&bbox, world_scale, &raw_data, elevation_data, area_name, Some(30))
+        .map_err(|e| format!("Failed to save cache: {}", e))?;
+
+    Ok(cache_id)
+}
+
+/// Tauri command to generate world from cached data
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+fn gui_generate_from_cache(
+    cache_id: String,
+    selected_world: String,
+    ground_level: i32,
+    floodfill_timeout: u64,
+    interior_enabled: bool,
+    roof_enabled: bool,
+    fillground_enabled: bool,
+    is_new_world: bool,
+    spawn_point: Option<(f64, f64)>,
+    telemetry_consent: bool,
+    world_format: String,
+) -> Result<(), String> {
+    use crate::cache_manager::CacheManager;
+    use crate::coordinate_system::geographic::LLBBox;
+    use crate::coordinate_system::transformation::CoordTransformer;
+    use crate::data_processing::{self, GenerationOptions};
+    use crate::ground;
+    use crate::osm_parser;
+    use crate::progress::emit_gui_progress_update;
+    use crate::telemetry;
+    use crate::world_editor::WorldFormat;
+    use LLPoint;
+
+    // Store telemetry consent
+    telemetry::set_telemetry_consent(telemetry_consent);
+    telemetry::send_generation_click();
+
+    tauri::async_runtime::spawn(async move {
+        let _ = tokio::task::spawn_blocking(move || {
+            // Load cache
+            let cache_manager = CacheManager::new()
+                .map_err(|e| format!("Failed to initialize cache manager: {}", e))?;
+
+            let cache_entry = cache_manager.load_cache(&cache_id)
+                .map_err(|e| format!("Failed to load cache: {}", e))?;
+
+            emit_gui_progress_update(5.0, "Loaded cache successfully");
+
+            // Parse bbox from cache
+            let bbox = LLBBox::from_str(&cache_entry.metadata.bbox)
+                .map_err(|e| format!("Invalid bbox in cache: {}", e))?;
+
+            let scale = cache_entry.metadata.scale;
+
+            // Handle spawn point for new worlds
+            if is_new_world && spawn_point.is_some() && world_format != "bedrock" {
+                if let Some(coords) = spawn_point {
+                    let llpoint = LLPoint::new(coords.0, coords.1)
+                        .map_err(|e| format!("Failed to parse spawn point: {}", e))?;
+
+                    if bbox.contains(&llpoint) {
+                        update_player_position(
+                            &selected_world,
+                            spawn_point,
+                            cache_entry.metadata.bbox.clone(),
+                            scale,
+                        )
+                        .map_err(|e| format!("Failed to set spawn point: {}", e))?;
+                    }
+                }
+            }
+
+            // Acquire session lock
+            let world_path = PathBuf::from(&selected_world);
+            let _session_lock = SessionLock::acquire(&world_path)
+                .map_err(|e| format!("Failed to acquire session lock: {}", e))?;
+
+            // Determine world format
+            let world_format = if world_format == "bedrock" {
+                WorldFormat::BedrockMcWorld
+            } else {
+                WorldFormat::JavaAnvil
+            };
+
+            // Determine output path and level name
+            let (generation_path, level_name) = match world_format {
+                WorldFormat::JavaAnvil => {
+                    let updated_path = if is_new_world {
+                        add_localized_world_name(world_path.clone(), &bbox)
+                    } else {
+                        world_path.clone()
+                    };
+                    (updated_path, None)
+                }
+                WorldFormat::BedrockMcWorld => {
+                    let area_name = get_area_name_for_bedrock(&bbox);
+                    let filename = format!("Arnis {}.mcworld", area_name);
+                    let lvl_name = format!("Arnis World: {}", area_name);
+                    let output_path = std::env::current_dir()
+                        .unwrap_or_else(|_| PathBuf::from("."))
+                        .join(filename);
+                    (output_path, Some(lvl_name))
+                }
+            };
+
+            // Calculate spawn coordinates
+            let mc_spawn_point: Option<(i32, i32)> = if let Some((lat, lng)) = spawn_point {
+                if let Ok(llpoint) = LLPoint::new(lat, lng) {
+                    if let Ok((transformer, _)) = CoordTransformer::llbbox_to_xzbbox(&bbox, scale) {
+                        let xzpoint = transformer.transform_point(llpoint);
+                        Some((xzpoint.x, xzpoint.z))
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+
+            // Create generation options
+            let generation_options = GenerationOptions {
+                path: generation_path.clone(),
+                format: world_format,
+                level_name,
+                spawn_point: mc_spawn_point,
+            };
+
+            // Create Args struct
+            let args = Args {
+                bbox: Some(bbox),
+                file: None,
+                save_json_file: None,
+                path: Some(if world_format == WorldFormat::JavaAnvil {
+                    generation_path
+                } else {
+                    world_path
+                }),
+                downloader: "requests".to_string(),
+                scale,
+                ground_level,
+                terrain: cache_entry.metadata.has_terrain,
+                interior: interior_enabled,
+                roof: roof_enabled,
+                fillground: fillground_enabled,
+                debug: false,
+                timeout: Some(std::time::Duration::from_secs(floodfill_timeout)),
+                spawn_point,
+                cache_only: false,
+                from_cache: None,
+                list_caches: false,
+                delete_cache: None,
+                clear_caches: false,
+                cache_dir: None,
+            };
+
+            // Generate ground data
+            let ground = ground::generate_ground_data(&args);
+
+            // Parse OSM data from cache
+            let (mut parsed_elements, mut xzbbox) = osm_parser::parse_osm_data(
+                cache_entry.osm_data,
+                bbox,
+                scale,
+                false,
+            );
+
+            parsed_elements.sort_by(|el1, el2| {
+                let (el1_priority, el2_priority) = (
+                    osm_parser::get_priority(el1),
+                    osm_parser::get_priority(el2),
+                );
+                match (
+                    el1.tags().contains_key("landuse"),
+                    el2.tags().contains_key("landuse"),
+                ) {
+                    (true, false) => std::cmp::Ordering::Greater,
+                    (false, true) => std::cmp::Ordering::Less,
+                    _ => el1_priority.cmp(&el2_priority),
+                }
+            });
+
+            // Generate world
+            let _ = data_processing::generate_world_with_options(
+                parsed_elements,
+                xzbbox.clone(),
+                bbox,
+                ground,
+                &args,
+                generation_options.clone(),
+            );
+
+            drop(_session_lock);
+            emit_gui_progress_update(100.0, "Done! World generation completed.");
+
+            // Start map preview generation for Java worlds
+            if world_format == WorldFormat::JavaAnvil {
+                let preview_info = data_processing::MapPreviewInfo::new(
+                    generation_options.path.clone(),
+                    &xzbbox,
+                );
+                data_processing::start_map_preview_generation(preview_info);
+            }
+
+            Ok::<(), String>(())
+        })
+        .await;
     });
 
     Ok(())

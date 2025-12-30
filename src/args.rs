@@ -7,9 +7,9 @@ use std::time::Duration;
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
 pub struct Args {
-    /// Bounding box of the area (min_lat,min_lng,max_lat,max_lng) (required)
-    #[arg(long, allow_hyphen_values = true, value_parser = LLBBox::from_str)]
-    pub bbox: LLBBox,
+    /// Bounding box of the area (min_lat,min_lng,max_lat,max_lng) (required unless using cache commands)
+    #[arg(long, allow_hyphen_values = true, value_parser = LLBBox::from_str, required_unless_present_any = ["list_caches", "delete_cache", "clear_caches", "from_cache"])]
+    pub bbox: Option<LLBBox>,
 
     /// JSON file containing OSM data (optional)
     #[arg(long, group = "location")]
@@ -19,9 +19,9 @@ pub struct Args {
     #[arg(long, group = "location")]
     pub save_json_file: Option<String>,
 
-    /// Path to the Minecraft world (required)
-    #[arg(long, value_parser = validate_minecraft_world_path)]
-    pub path: PathBuf,
+    /// Path to the Minecraft world (required unless using cache-only mode or cache commands)
+    #[arg(long, value_parser = validate_minecraft_world_path, required_unless_present_any = ["cache_only", "list_caches", "delete_cache", "clear_caches"])]
+    pub path: Option<PathBuf>,
 
     /// Downloader method (requests/curl/wget) (optional)
     #[arg(long, default_value = "requests")]
@@ -62,6 +62,30 @@ pub struct Args {
     /// Spawn point coordinates (lat, lng)
     #[arg(skip)]
     pub spawn_point: Option<(f64, f64)>,
+
+    /// Pre-cache data only without generating world (optional)
+    #[arg(long)]
+    pub cache_only: bool,
+
+    /// Generate world from a cached region (provide cache ID)
+    #[arg(long, conflicts_with = "file")]
+    pub from_cache: Option<String>,
+
+    /// List all available cached regions
+    #[arg(long)]
+    pub list_caches: bool,
+
+    /// Delete a specific cached region (provide cache ID)
+    #[arg(long)]
+    pub delete_cache: Option<String>,
+
+    /// Clear all cached regions
+    #[arg(long)]
+    pub clear_caches: bool,
+
+    /// Custom cache directory (optional)
+    #[arg(long)]
+    pub cache_dir: Option<PathBuf>,
 }
 
 fn validate_minecraft_world_path(path: &str) -> Result<PathBuf, String> {
@@ -129,6 +153,14 @@ mod tests {
         assert!(Args::try_parse_from(cmd.iter()).is_err());
 
         let cmd = ["arnis", "--path", tmp_path, "--bbox", "1,2,3,4"];
+        assert!(Args::try_parse_from(cmd.iter()).is_ok());
+
+        // Test cache-only mode
+        let cmd = ["arnis", "--cache-only", "--bbox", "1,2,3,4"];
+        assert!(Args::try_parse_from(cmd.iter()).is_ok());
+
+        // Test list-caches command
+        let cmd = ["arnis", "--list-caches"];
         assert!(Args::try_parse_from(cmd.iter()).is_ok());
 
         let cmd = ["arnis", "--path", tmp_path, "--file", ""];

@@ -69,28 +69,53 @@ impl Default for ChunkedGenerationConfig {
 }
 
 /// Calculate the area of a bounding box in square meters
+/// Uses an approximate Haversine-based calculation that accounts for Earth's curvature.
+///
+/// # Arguments
+/// * `bbox` - Geographic bounding box (latitude/longitude)
+///
+/// # Returns
+/// Area in square meters (m²)
+#[inline]
 pub fn calculate_bbox_area_m2(bbox: &LLBBox) -> f64 {
-    // Approximate calculation using Haversine formula
+    // Earth's mean radius in meters
     const EARTH_RADIUS_M: f64 = 6_371_000.0;
 
+    // Calculate the differences in latitude and longitude
     let lat_diff = bbox.max().lat() - bbox.min().lat();
     let lng_diff = bbox.max().lng() - bbox.min().lng();
 
+    // Use center latitude for more accurate width calculation
     let lat_center = (bbox.min().lat() + bbox.max().lat()) / 2.0;
 
-    // Convert to radians
+    // Convert degrees to radians for trigonometric calculations
     let lat_diff_rad = lat_diff.to_radians();
     let lng_diff_rad = lng_diff.to_radians();
     let lat_center_rad = lat_center.to_radians();
 
-    // Calculate distances
+    // Calculate distances in meters
+    // Height: latitude difference * Earth's radius
     let height_m = lat_diff_rad * EARTH_RADIUS_M;
+    // Width: longitude difference * Earth's radius * cosine(latitude)
+    // Cosine accounts for meridian convergence towards poles
     let width_m = lng_diff_rad * EARTH_RADIUS_M * lat_center_rad.cos();
 
+    // Return rectangular approximation (good enough for small areas <100 km)
     height_m * width_m
 }
 
 /// Check if a bounding box needs chunked generation
+///
+/// Chunked generation is recommended for areas larger than 4 km² to prevent
+/// memory overflow on low-end systems.
+///
+/// # Arguments
+/// * `bbox` - Geographic bounding box to check
+/// * `config` - Chunked generation configuration
+///
+/// # Returns
+/// `true` if the area should be split into chunks, `false` otherwise
+#[inline]
 pub fn needs_chunking(bbox: &LLBBox, config: &ChunkedGenerationConfig) -> bool {
     if !config.enabled {
         return false;
@@ -100,12 +125,29 @@ pub fn needs_chunking(bbox: &LLBBox, config: &ChunkedGenerationConfig) -> bool {
     area > MAX_SAFE_AREA_M2
 }
 
-/// Split a bounding box into chunks
+/// Split a bounding box into manageable chunks for sequential processing
+///
+/// This function divides large areas into a grid of smaller chunks that can be
+/// processed one at a time, preventing memory overflow on low-end systems.
+///
+/// # Arguments
+/// * `bbox` - Geographic bounding box to split
+/// * `config` - Chunked generation configuration (chunk size, overlap, limits)
+///
+/// # Returns
+/// * `Ok(Vec<GenerationChunk>)` - Vector of chunks (single chunk if no splitting needed)
+/// * `Err(String)` - Error if area would require too many chunks
+///
+/// # Algorithm
+/// 1. Calculate total area in m²
+/// 2. Determine grid dimensions (N×N chunks)
+/// 3. Split bbox into overlapping sub-regions
+/// 4. Add overlap to prevent gaps at chunk boundaries
 pub fn create_chunks(bbox: &LLBBox, config: &ChunkedGenerationConfig) -> Result<Vec<GenerationChunk>, String> {
     let area = calculate_bbox_area_m2(bbox);
 
+    // No chunking needed for small areas
     if area <= MAX_SAFE_AREA_M2 {
-        // No chunking needed, return single chunk
         return Ok(vec![GenerationChunk {
             id: "chunk_0_0".to_string(),
             bbox: *bbox,
@@ -116,10 +158,11 @@ pub fn create_chunks(bbox: &LLBBox, config: &ChunkedGenerationConfig) -> Result<
         }]);
     }
 
-    // Calculate number of chunks needed
+    // Calculate grid dimensions: create an N×N grid where N² ≈ area/chunk_size
     let num_chunks = (area / config.chunk_size_m2).ceil() as usize;
     let chunks_per_side = (num_chunks as f64).sqrt().ceil() as usize;
 
+    // Safety check: prevent creating too many chunks
     if chunks_per_side * chunks_per_side > config.max_chunks {
         return Err(format!(
             "Area too large: would require {} chunks (max: {}). Please select a smaller area.",
@@ -128,7 +171,8 @@ pub fn create_chunks(bbox: &LLBBox, config: &ChunkedGenerationConfig) -> Result<
         ));
     }
 
-    let mut chunks = Vec::new();
+    // Pre-allocate chunk vector with exact capacity
+    let mut chunks = Vec::with_capacity(chunks_per_side * chunks_per_side);
 
     let lat_range = bbox.max().lat() - bbox.min().lat();
     let lng_range = bbox.max().lng() - bbox.min().lng();

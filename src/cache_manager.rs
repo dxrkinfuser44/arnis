@@ -221,7 +221,25 @@ impl CacheManager {
         Ok(())
     }
 
-    /// Save a cache entry to disk
+    /// Save a cache entry to disk with all associated data
+    ///
+    /// Creates a cache directory containing:
+    /// - `metadata.json`: Cache metadata (name, bbox, size, etc.)
+    /// - `osm_data.json`: Pretty-printed OSM JSON data
+    /// - `elevation_data.bin.gz`: Compressed elevation data (if terrain enabled)
+    /// - `preview.png`: Auto-generated preview image
+    ///
+    /// # Arguments
+    /// * `bbox` - Geographic bounding box of the cached region
+    /// * `scale` - World scale factor used
+    /// * `osm_data` - Raw OSM JSON data from Overpass API
+    /// * `elevation_data` - Optional elevation data for terrain
+    /// * `area_name` - Optional human-readable name (e.g., "New York City")
+    /// * `expiration_days` - Optional expiration period (default: 30 days)
+    ///
+    /// # Returns
+    /// * `Ok(String)` - The generated cache ID
+    /// * `Err(String)` - Error message if caching fails
     pub fn save_cache(
         &self,
         bbox: &LLBBox,
@@ -234,24 +252,27 @@ impl CacheManager {
         let cache_id = Self::generate_cache_id(bbox);
         let cache_path = self.cache_dir.join(&cache_id);
 
-        // Create cache directory
+        // Create cache directory structure
         fs::create_dir_all(&cache_path)
             .map_err(|e| format!("Failed to create cache entry directory: {}", e))?;
 
-        // Save OSM data
+        // Save OSM data as pretty-printed JSON for human readability
         let osm_file = cache_path.join("osm_data.json");
         let osm_json = serde_json::to_string_pretty(osm_data)
             .map_err(|e| format!("Failed to serialize OSM data: {}", e))?;
         fs::write(&osm_file, osm_json)
             .map_err(|e| format!("Failed to write OSM data: {}", e))?;
 
-        // Save elevation data if present
+        // Save elevation data if present (with GZip compression to save ~60-70% space)
         let has_terrain = elevation_data.is_some();
         if let Some(elev_data) = elevation_data {
             let elev_file = cache_path.join("elevation_data.bin.gz");
+            
+            // Serialize to binary format using bincode
             let elev_bytes = bincode::serialize(elev_data)
                 .map_err(|e| format!("Failed to serialize elevation data: {}", e))?;
             
+            // Compress with GZip (default compression level)
             let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
             encoder.write_all(&elev_bytes)
                 .map_err(|e| format!("Failed to compress elevation data: {}", e))?;
@@ -262,16 +283,16 @@ impl CacheManager {
                 .map_err(|e| format!("Failed to write elevation data: {}", e))?;
         }
 
-        // Get element count from OSM data
+        // Count elements for metadata
         let element_count = osm_data["elements"]
             .as_array()
             .map(|arr| arr.len())
             .unwrap_or(0);
 
-        // Generate preview image
+        // Generate preview image (400x300 PNG showing OSM elements)
         let has_preview = Self::generate_preview_image(osm_data, bbox, &cache_path).is_ok();
 
-        // Calculate total size
+        // Calculate total cache size on disk
         let size_bytes = Self::calculate_directory_size(&cache_path)?;
 
         // Calculate expiration date if specified

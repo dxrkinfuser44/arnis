@@ -47,10 +47,14 @@ impl SplitOsmData {
         self.nodes.len() + self.ways.len() + self.relations.len() + self.others.len()
     }
     fn from_raw_osm_data(osm_data: OsmData) -> Self {
-        let mut nodes = Vec::new();
-        let mut ways = Vec::new();
-        let mut relations = Vec::new();
-        let mut others = Vec::new();
+        // Pre-allocate vectors with estimated capacity to reduce reallocations
+        // Typical OSM data: ~70% nodes, ~25% ways, ~5% relations
+        let total = osm_data.elements.len();
+        let mut nodes = Vec::with_capacity(total * 7 / 10);
+        let mut ways = Vec::with_capacity(total * 3 / 10);
+        let mut relations = Vec::with_capacity(total / 20);
+        let mut others = Vec::with_capacity(total / 100);
+        
         for element in osm_data.elements {
             match element.r#type.as_str() {
                 "node" => nodes.push(element),
@@ -188,10 +192,14 @@ pub fn parse_osm_data(
         println!("Scale factor Z: {}", coord_transformer.scale_factor_z());
     }
 
-    let mut nodes_map: HashMap<u64, ProcessedNode> = HashMap::new();
-    let mut ways_map: HashMap<u64, ProcessedWay> = HashMap::new();
+    // Pre-allocate HashMaps with estimated capacity based on data size
+    let mut nodes_map: HashMap<u64, ProcessedNode> = HashMap::with_capacity(data.nodes.len());
+    let mut ways_map: HashMap<u64, ProcessedWay> = HashMap::with_capacity(data.ways.len());
 
-    let mut processed_elements: Vec<ProcessedElement> = Vec::new();
+    // Pre-allocate processed_elements vector with estimated capacity
+    // Typical: ~10% of nodes are tagged, ~95% of ways, ~90% of relations
+    let estimated_output = data.nodes.len() / 10 + data.ways.len() + data.relations.len() * 9 / 10;
+    let mut processed_elements: Vec<ProcessedElement> = Vec::with_capacity(estimated_output);
 
     // First pass: store all nodes with Minecraft coordinates and process nodes with tags
     for element in data.nodes {
@@ -225,7 +233,10 @@ pub fn parse_osm_data(
 
     // Second pass: process ways and clip them to bbox
     for element in data.ways {
-        let mut nodes: Vec<ProcessedNode> = vec![];
+        // Pre-allocate nodes vector with exact capacity
+        let node_count = element.nodes.as_ref().map(|n| n.len()).unwrap_or(0);
+        let mut nodes: Vec<ProcessedNode> = Vec::with_capacity(node_count);
+        
         if let Some(node_ids) = &element.nodes {
             for &node_id in node_ids {
                 if let Some(node) = nodes_map.get(&node_id) {
@@ -340,6 +351,8 @@ pub fn parse_osm_data(
 }
 
 /// Returns true if tags indicate a water element handled by water_areas.rs.
+/// This function is called frequently, so we inline it for better performance.
+#[inline]
 fn is_water_element(tags: &HashMap<String, String>) -> bool {
     // Check for explicit water tag
     if tags.contains_key("water") {
@@ -367,7 +380,9 @@ const PRIORITY_ORDER: [&str; 6] = [
     "entrance", "building", "highway", "waterway", "water", "barrier",
 ];
 
-// Function to determine the priority of each element
+/// Determines the priority of each element for rendering order.
+/// Lower values are rendered first. Inlined for better performance in hot sorting paths.
+#[inline]
 pub fn get_priority(element: &ProcessedElement) -> usize {
     // Check each tag against the priority order
     for (i, &tag) in PRIORITY_ORDER.iter().enumerate() {

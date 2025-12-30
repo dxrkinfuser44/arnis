@@ -44,7 +44,10 @@ pub fn generate_buildings(
     let min_level_offset = multiply_scale(min_level * 4, scale_factor);
 
     // Cache floodfill result: compute once and reuse throughout
-    let polygon_coords: Vec<(i32, i32)> = element.nodes.iter().map(|n| (n.x, n.z)).collect();
+    // Pre-allocate with exact capacity for better performance
+    let polygon_coords: Vec<(i32, i32)> = element.nodes.iter()
+        .map(|n| (n.x, n.z))
+        .collect();
     let cached_floor_area: Vec<(i32, i32)> =
         flood_fill_area(&polygon_coords, args.timeout.as_ref());
     let cached_footprint_size = cached_floor_area.len();
@@ -719,6 +722,9 @@ pub fn generate_buildings(
     }
 }
 
+/// Fast scaling helper that uses bit shifts for common scale factors.
+/// Inlined for better performance in tight loops.
+#[inline]
 fn multiply_scale(value: i32, scale_factor: f64) -> i32 {
     // Use bit operations for faster multiplication when possible
     if scale_factor == 1.0 {

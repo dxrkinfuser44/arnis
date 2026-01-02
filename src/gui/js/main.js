@@ -823,6 +823,21 @@ async function startGeneration() {
           progressMessage.style.color = "#fa7878";
         }
         generationButtonEnabled = true;
+
+        // Reset progress UI after a short delay so the user sees the error,
+        // but the controls return to a "ready" state for retry.
+        if (progressElement || progressMessage) {
+          setTimeout(() => {
+            if (progressElement) {
+              progressElement.value = 0;
+            }
+            if (progressMessage) {
+              progressMessage.textContent = "";
+              // Clear the error color so subsequent runs start from a neutral state.
+              progressMessage.style.color = "";
+            }
+          }, 2000);
+        }
       }
       return;
     }

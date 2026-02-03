@@ -15,6 +15,7 @@ mod elevation_data;
 mod floodfill;
 mod floodfill_cache;
 mod ground;
+mod logger;
 mod map_renderer;
 mod map_transformation;
 mod osm_parser;
@@ -32,6 +33,7 @@ mod world_editor;
 use args::Args;
 use clap::Parser;
 use colored::*;
+use logger::{LogLevel, ProgressLogger};
 use std::{env, fs, io::Write};
 
 #[cfg(feature = "gui")]
@@ -52,11 +54,22 @@ mod progress {
 use windows::Win32::System::Console::{AttachConsole, FreeConsole, ATTACH_PARENT_PROCESS};
 
 fn run_cli() {
+    // Initialize logging system
+    // Use Debug level if --debug flag is set, otherwise Info
+    let log_level = if std::env::args().any(|arg| arg == "--debug") {
+        LogLevel::Debug
+    } else {
+        LogLevel::Info
+    };
+    logger::init(log_level, true, true);
+
     // Configure thread pool with 90% CPU cap to keep system responsive
     floodfill_cache::configure_rayon_thread_pool(0.9);
+    logger::info!("Configured thread pool with 90% CPU limit");
 
     // Clean up old cached elevation tiles on startup
     elevation_data::cleanup_old_cached_tiles();
+    logger::info!("Cleaned up cached elevation tiles");
 
     let version: &str = env!("CARGO_PKG_VERSION");
     let repository: &str = env!("CARGO_PKG_REPOSITORY");
@@ -79,40 +92,59 @@ fn run_cli() {
         repository.bright_white().bold()
     );
 
+    logger::info!("Starting Arnis v{}", version);
+
     // Check for updates
     if let Err(e) = version_check::check_for_updates() {
-        eprintln!(
-            "{}: {}",
-            "Error checking for version updates".red().bold(),
-            e
-        );
+        logger::error!("Failed to check for updates: {}", e);
     }
 
     // Parse input arguments
     let args: Args = Args::parse();
+    logger::info!("Parsed CLI arguments - path: {:?}, bbox: {:?}", args.path, args.bbox);
 
-    // Fetch data
+    // Fetch data with better error handling
     let raw_data = match &args.file {
-        Some(file) => retrieve_data::fetch_data_from_file(file),
-        None => retrieve_data::fetch_data_from_overpass(
-            args.bbox,
-            args.debug,
-            args.downloader.as_str(),
-            args.save_json_file.as_deref(),
-        ),
-    }
-    .expect("Failed to fetch data");
+        Some(file) => {
+            logger::info!("Loading data from file: {}", file);
+            retrieve_data::fetch_data_from_file(file)
+        }
+        None => {
+            logger::info!("Fetching data from Overpass API");
+            retrieve_data::fetch_data_from_overpass(
+                args.bbox,
+                args.debug,
+                args.downloader.as_str(),
+                args.save_json_file.as_deref(),
+            )
+        }
+    };
+
+    let raw_data = match raw_data {
+        Ok(data) => {
+            logger::info!("Successfully fetched OSM data");
+            data
+        }
+        Err(e) => {
+            logger::error!("Failed to fetch data: {}", e);
+            std::process::exit(1);
+        }
+    };
 
     let mut ground = ground::generate_ground_data(&args);
 
     // Parse raw data
+    logger::info!("Parsing OSM data...");
     let (mut parsed_elements, mut xzbbox) =
         osm_parser::parse_osm_data(raw_data, args.bbox, args.scale, args.debug);
+    logger::info!("Parsed {} elements", parsed_elements.len());
+    
     parsed_elements
         .sort_by_key(|element: &osm_parser::ProcessedElement| osm_parser::get_priority(element));
 
     // Write the parsed OSM data to a file for inspection
     if args.debug {
+        logger::debug!("Writing parsed OSM data to debug file");
         let mut buf = std::io::BufWriter::new(
             fs::File::create("parsed_osm_data.txt").expect("Failed to create output file"),
         );
@@ -129,10 +161,13 @@ fn run_cli() {
     }
 
     // Transform map (parsed_elements). Operations are defined in a json file
+    logger::info!("Applying map transformations...");
     map_transformation::transform_map(&mut parsed_elements, &mut xzbbox, &mut ground);
 
     // Generate world
+    logger::info!("Starting world generation...");
     let _ = data_processing::generate_world(parsed_elements, xzbbox, args.bbox, ground, &args);
+    logger::info!("World generation completed");
 }
 
 fn main() {

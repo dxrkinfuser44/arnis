@@ -33,7 +33,8 @@ use std::collections::{hash_map::Entry, HashMap};
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
 #[cfg(feature = "gui")]
 use crate::telemetry::{send_log, LogLevel};
@@ -78,6 +79,57 @@ pub struct WorldEditor<'a> {
     bedrock_level_name: Option<String>,
     /// Optional spawn point for Bedrock worlds (x, z coordinates)
     bedrock_spawn_point: Option<(i32, i32)>,
+}
+
+/// Cooperative limiter to avoid concurrent high-memory operations.
+///
+/// This is a lightweight, in-process coordination mechanism. It does not
+/// pre-empt or cancel work; instead, it delays operations that opt in until
+/// the limiter is available.
+pub struct MemoryLimiter {
+    gate: Mutex<bool>,
+}
+
+impl MemoryLimiter {
+    pub fn global() -> Arc<Self> {
+        use once_cell::sync::Lazy;
+        static LIMITER: Lazy<Arc<MemoryLimiter>> = Lazy::new(|| {
+            Arc::new(MemoryLimiter {
+                gate: Mutex::new(false),
+            })
+        });
+        Arc::clone(&LIMITER)
+    }
+
+    /// Acquire a guard that releases on drop.
+    pub fn guard(self: &Arc<Self>) -> MemoryLimiterGuard {
+        let start = Instant::now();
+        loop {
+            if let Ok(mut in_use) = self.gate.lock() {
+                if !*in_use {
+                    *in_use = true;
+                    return MemoryLimiterGuard {
+                        limiter: Arc::clone(self),
+                        _acquired_at: start,
+                    };
+                }
+            }
+            std::thread::sleep(Duration::from_millis(50));
+        }
+    }
+}
+
+pub struct MemoryLimiterGuard {
+    limiter: Arc<MemoryLimiter>,
+    _acquired_at: Instant,
+}
+
+impl Drop for MemoryLimiterGuard {
+    fn drop(&mut self) {
+        if let Ok(mut in_use) = self.limiter.gate.lock() {
+            *in_use = false;
+        }
+    }
 }
 
 impl<'a> WorldEditor<'a> {

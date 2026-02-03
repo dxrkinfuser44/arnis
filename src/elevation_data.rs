@@ -269,10 +269,39 @@ fn fetch_or_load_tile(
     }
 }
 
+/// Prefetch tiles ahead of processing to keep I/O and network busy.
+fn prefetch_tiles(
+    client: &reqwest::blocking::Client,
+    zoom: u8,
+    tile_cache_dir: &Path,
+    tiles: &[(u32, u32)],
+    prefetch_limit: usize,
+) {
+    if prefetch_limit == 0 {
+        return;
+    }
+
+    rayon::scope(|s| {
+        tiles
+            .iter()
+            .take(prefetch_limit)
+            .for_each(|(tile_x, tile_y)| {
+                let tile_path = tile_cache_dir.join(format!("z{zoom}_x{tile_x}_y{tile_y}.png"));
+                let tile_x = *tile_x;
+                let tile_y = *tile_y;
+                let tile_path = tile_path.clone();
+                s.spawn(move |_| {
+                    let _ = fetch_or_load_tile(client, tile_x, tile_y, zoom, &tile_path);
+                });
+            });
+    });
+}
+
 pub fn fetch_elevation_data(
     bbox: &LLBBox,
     scale: f64,
     ground_level: i32,
+    tile_prefetch: usize,
 ) -> Result<ElevationData, Box<dyn std::error::Error>> {
     let (base_scale_z, base_scale_x) = geo_distance(bbox.min(), bbox.max());
 
@@ -300,9 +329,12 @@ pub fn fetch_elevation_data(
     // Create a shared HTTP client for connection pooling
     let client = reqwest::blocking::Client::new();
 
+    // Use the smaller of requested prefetch or tile count
+    let prefetch_limit = tile_prefetch.min(tiles.len());
+
     // Download tiles in parallel with limited concurrency to be respectful to AWS
     let num_tiles = tiles.len();
-    println!(
+    info!(
         "Downloading {num_tiles} elevation tiles (up to {MAX_CONCURRENT_DOWNLOADS} concurrent)..."
     );
 
@@ -312,9 +344,10 @@ pub fn fetch_elevation_data(
         .build()
         .map_err(|e| format!("Failed to create thread pool: {e}"))?;
 
-    let downloaded_tiles: Vec<TileDownloadResult> = thread_pool.install(|| {
+    let prefetched_tiles: Vec<TileDownloadResult> = thread_pool.install(|| {
         tiles
             .par_iter()
+            .take(prefetch_limit)
             .map(|(tile_x, tile_y)| {
                 let tile_path = tile_cache_dir.join(format!("z{zoom}_x{tile_x}_y{tile_y}.png"));
 
@@ -324,27 +357,44 @@ pub fn fetch_elevation_data(
             .collect()
     });
 
-    // Check for any download errors
-    let mut successful_tiles = Vec::new();
-    for result in downloaded_tiles {
-        match result {
-            Ok(tile_data) => successful_tiles.push(tile_data),
+    let mut prefetched_ok = 0usize;
+    for result in prefetched_tiles {
+        if result.is_ok() {
+            prefetched_ok += 1;
+        }
+    }
+
+    info!(
+        "Processing {} elevation tiles ({} prefetched)...",
+        tiles.len(),
+        prefetched_ok
+    );
+    emit_gui_progress_update(15.0, "Processing elevation...");
+
+    for (index, (tile_x, tile_y)) in tiles.iter().copied().enumerate() {
+        if index == 0 {
+            prefetch_tiles(&client, zoom, &tile_cache_dir, &tiles, prefetch_limit);
+        }
+
+        if prefetch_limit > 0 && index > 0 && index % prefetch_limit == 0 {
+            let remaining = &tiles[index..];
+            prefetch_tiles(&client, zoom, &tile_cache_dir, remaining, prefetch_limit);
+        }
+
+        let tile_path = tile_cache_dir.join(format!("z{zoom}_x{tile_x}_y{tile_y}.png"));
+        let rgb_img = match fetch_or_load_tile(&client, tile_x, tile_y, zoom, &tile_path) {
+            Ok(img) => img,
             Err(e) => {
-                eprintln!("Warning: Failed to download tile: {e}");
+                warn!("Failed to download tile: {e}");
                 #[cfg(feature = "gui")]
                 send_log(
                     LogLevel::Warning,
                     &format!("Failed to download elevation tile: {e}"),
                 );
+                continue;
             }
-        }
-    }
+        };
 
-    println!("Processing {} elevation tiles...", successful_tiles.len());
-    emit_gui_progress_update(15.0, "Processing elevation...");
-
-    // Process tiles sequentially (writes to shared height_grid)
-    for ((tile_x, tile_y), rgb_img) in successful_tiles {
         // Only process pixels that fall within the requested bbox
         for (y, row) in rgb_img.rows().enumerate() {
             for (x, pixel) in row.enumerate() {

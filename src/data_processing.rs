@@ -54,6 +54,7 @@ use crate::progress::{emit_gui_progress_update, emit_map_preview_ready, emit_ope
 use crate::telemetry::{send_log, LogLevel};
 use crate::urban_ground;
 use crate::warn;
+use crate::world_editor::MemoryLimiter;
 use crate::world_editor::{WorldEditor, WorldFormat};
 use indicatif::{ProgressBar, ProgressStyle};
 use std::path::PathBuf;
@@ -169,6 +170,7 @@ pub fn generate_world_with_options(
     emit_gui_progress_update(25.0, "Processing terrain...");
 
     // Pre-compute all flood fills in parallel for better CPU utilization
+    let _memory_guard = MemoryLimiter::global().guard();
     let mut flood_fill_cache = FloodFillCache::precompute(&elements, args.timeout.as_ref());
 
     // Collect building footprints to prevent trees from spawning inside buildings
@@ -588,6 +590,7 @@ pub fn start_map_preview_generation(info: MapPreviewInfo) {
     }
 
     std::thread::spawn(move || {
+        let _memory_guard = MemoryLimiter::global().guard();
         // Use catch_unwind to prevent any panic from affecting the application
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             map_renderer::render_world_map(

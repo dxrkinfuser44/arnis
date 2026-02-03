@@ -69,6 +69,7 @@ fn run_cli() {
     let show_timestamps = !args.no_log_timestamps;
     let use_colors = !args.no_log_colors;
     logger::init(log_level, show_timestamps, use_colors);
+    info!("Tile prefetch set to {}", args.tile_prefetch);
 
     // Configure thread pool with 90% CPU cap to keep system responsive
     floodfill_cache::configure_rayon_thread_pool(0.9);

@@ -74,6 +74,10 @@ pub struct Args {
     #[arg(long)]
     pub no_log_colors: bool,
 
+    /// Maximum number of tiles to prefetch during terrain download
+    #[arg(long, default_value_t = 8)]
+    pub tile_prefetch: usize,
+
     /// Set floodfill timeout (seconds) (optional)
     #[arg(long, value_parser = parse_duration)]
     pub timeout: Option<Duration>,
@@ -183,5 +187,23 @@ mod tests {
         ];
         let args = Args::parse_from(cmd.iter());
         assert_eq!(args.log_level, Some(LogLevel::Trace));
+    }
+
+    #[test]
+    fn parses_tile_prefetch_flag() {
+        let tmpdir = minecraft_tmpdir();
+        let tmp_path = tmpdir.path().to_str().unwrap();
+
+        let cmd = [
+            "arnis",
+            "--path",
+            tmp_path,
+            "--bbox",
+            "1,2,3,4",
+            "--tile-prefetch",
+            "16",
+        ];
+        let args = Args::parse_from(cmd.iter());
+        assert_eq!(args.tile_prefetch, 16);
     }
 }

@@ -25,8 +25,8 @@ impl Ground {
         }
     }
 
-    pub fn new_enabled(bbox: &LLBBox, scale: f64, ground_level: i32) -> Self {
-        match fetch_elevation_data(bbox, scale, ground_level) {
+    pub fn new_enabled(bbox: &LLBBox, scale: f64, ground_level: i32, tile_prefetch: usize) -> Self {
+        match fetch_elevation_data(bbox, scale, ground_level, tile_prefetch) {
             Ok(elevation_data) => Self {
                 elevation_enabled: true,
                 ground_level,
@@ -149,7 +149,12 @@ pub fn generate_ground_data(args: &Args) -> Ground {
     if args.terrain {
         info!("[3/7] Fetching elevation tiles");
         emit_gui_progress_update(14.0, "Fetching elevation...");
-        let ground = Ground::new_enabled(&args.bbox, args.scale, args.ground_level);
+        let ground = Ground::new_enabled(
+            &args.bbox,
+            args.scale,
+            args.ground_level,
+            args.tile_prefetch,
+        );
         if args.debug {
             debug!("Saving elevation debug image to elevation_debug.png");
             ground.save_debug_image("elevation_debug");

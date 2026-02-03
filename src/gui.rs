@@ -1013,6 +1013,7 @@ fn gui_start_generation(
                 log_level: None,
                 no_log_timestamps: false,
                 no_log_colors: false,
+                tile_prefetch: 8,
                 timeout: Some(std::time::Duration::from_secs(40)),
             };
 

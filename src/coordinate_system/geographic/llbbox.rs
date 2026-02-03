@@ -30,12 +30,18 @@ impl LLBBox {
     }
 
     pub fn from_str(s: &str) -> Result<Self, String> {
-        let [min_lat, min_lng, max_lat, max_lng]: [f64; 4] = s
-            .split([',', ' '])
-            .map(|e| e.parse().unwrap())
-            .collect::<Vec<_>>()
+        let cleaned = s.replace(',', " ");
+        let parts: Vec<f64> = cleaned
+            .split_whitespace()
+            .map(|e| {
+                e.parse::<f64>()
+                    .map_err(|_| format!("Invalid bbox value '{e}'"))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+        let [min_lat, min_lng, max_lat, max_lng]: [f64; 4] = parts
             .try_into()
-            .unwrap();
+            .map_err(|_| format!("Invalid bbox format '{s}'. Expected 4 numbers"))?;
 
         // So, the GUI does Lat/Lng and no GDAL (comma-sep values), which is the exact opposite of
         // what bboxfinder.com does. :facepalm: (bboxfinder is wrong here: Lat comes first!)
@@ -121,5 +127,12 @@ mod tests {
         assert!(LLBBox::new(0., 0., 0., 0.).is_err());
         assert!(LLBBox::new(1., 0., 0., 1.).is_err());
         assert!(LLBBox::new(0., 1., 1., 0.).is_err());
+    }
+
+    #[test]
+    fn test_invalid_format() {
+        assert!(LLBBox::from_str("1,2,3").is_err());
+        assert!(LLBBox::from_str("1,2,3,4,5").is_err());
+        assert!(LLBBox::from_str("a,b,c,d").is_err());
     }
 }

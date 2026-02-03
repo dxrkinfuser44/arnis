@@ -5,7 +5,6 @@
 
 use colored::Colorize;
 use std::fmt;
-use std::io::Write;
 use std::sync::Mutex;
 use std::time::SystemTime;
 
@@ -21,16 +20,6 @@ pub enum LogLevel {
 
 impl LogLevel {
     /// Get the color for this log level
-    pub fn color(&self) -> &str {
-        match self {
-            LogLevel::Error => "red",
-            LogLevel::Warning => "yellow",
-            LogLevel::Info => "white",
-            LogLevel::Debug => "blue",
-            LogLevel::Trace => "magenta",
-        }
-    }
-
     /// Get the string representation
     pub fn as_str(&self) -> &'static str {
         match self {
@@ -91,11 +80,13 @@ fn format_timestamp() -> String {
     if let Ok(duration) = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
         let secs = duration.as_secs();
         let millis = duration.subsec_millis();
-        format!("{:02}:{:02}:{:02}.{:03}", 
+        format!(
+            "{:02}:{:02}:{:02}.{:03}",
             (secs / 3600) % 24,
             (secs / 60) % 60,
             secs % 60,
-            millis)
+            millis
+        )
     } else {
         String::from("??:??:??.???")
     }
@@ -191,11 +182,13 @@ pub fn log_debug(message: &str) {
     log(LogLevel::Debug, module_path!(), message);
 }
 
+#[allow(dead_code)]
 pub fn log_trace(message: &str) {
     log(LogLevel::Trace, module_path!(), message);
 }
 
 /// Log with explicit module name (useful when module_path!() doesn't give desired result)
+#[allow(dead_code)]
 pub fn log_with_module(level: LogLevel, module: &str, message: &str) {
     let _ = level; // Suppress unused warning when logging is disabled
     let _ = module;
@@ -232,6 +225,7 @@ pub fn log_with_module(level: LogLevel, module: &str, message: &str) {
 }
 
 /// Set minimum log level at runtime
+#[allow(dead_code)]
 pub fn set_log_level(level: LogLevel) {
     if let Ok(mut min_level) = MIN_LOG_LEVEL.lock() {
         *min_level = level;
@@ -239,17 +233,20 @@ pub fn set_log_level(level: LogLevel) {
 }
 
 /// Get the current log level
+#[allow(dead_code)]
 pub fn current_log_level() -> LogLevel {
     get_min_level()
 }
 
 /// Progress logging helper - for structured progress updates
+#[allow(dead_code)]
 pub struct ProgressLogger {
     total_steps: u32,
     current_step: u32,
     operation_name: String,
 }
 
+#[allow(dead_code)]
 impl ProgressLogger {
     /// Create a new progress logger
     pub fn new(operation_name: &str, total_steps: u32) -> Self {
@@ -263,18 +260,19 @@ impl ProgressLogger {
     }
 
     /// Update progress and log if significant change
+    #[allow(clippy::manual_is_multiple_of)]
     pub fn update(&mut self, step: u32) {
         self.current_step = step;
         let percentage = (self.current_step as f32 / self.total_steps as f32) * 100.0;
-        
+
         // Log at 25%, 50%, 75%, and 100%
-        if self.current_step % (self.total_steps / 4).max(1) == 0 
-            || self.current_step == self.total_steps {
-            info!("{}: {}/{} ({:.1}%)", 
-                self.operation_name, 
-                self.current_step, 
-                self.total_steps, 
-                percentage);
+        if self.current_step % (self.total_steps / 4).max(1) == 0
+            || self.current_step == self.total_steps
+        {
+            info!(
+                "{}: {}/{} ({:.1}%)",
+                self.operation_name, self.current_step, self.total_steps, percentage
+            );
         }
     }
 

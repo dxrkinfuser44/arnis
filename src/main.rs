@@ -33,7 +33,7 @@ mod world_editor;
 use args::Args;
 use clap::Parser;
 use colored::*;
-use logger::{LogLevel, ProgressLogger};
+use logger::LogLevel;
 use std::{env, fs, io::Write};
 
 #[cfg(feature = "gui")]
@@ -53,28 +53,36 @@ mod progress {
 #[cfg(target_os = "windows")]
 use windows::Win32::System::Console::{AttachConsole, FreeConsole, ATTACH_PARENT_PROCESS};
 
+#[allow(clippy::unnecessary_lazy_evaluations)]
 fn run_cli() {
-    // Initialize logging system
-    // Use Debug level if --debug flag is set, otherwise Info
-    let log_level = if std::env::args().any(|arg| arg == "--debug") {
-        LogLevel::Debug
-    } else {
-        LogLevel::Info
-    };
-    logger::init(log_level, true, true);
+    // Parse input arguments
+    let args: Args = Args::parse();
+
+    // Initialize logging system. Use CLI overrides when present, otherwise default behavior.
+    let log_level = args.log_level.unwrap_or_else(|| {
+        if args.debug {
+            LogLevel::Debug
+        } else {
+            LogLevel::Info
+        }
+    });
+    let show_timestamps = !args.no_log_timestamps;
+    let use_colors = !args.no_log_colors;
+    logger::init(log_level, show_timestamps, use_colors);
 
     // Configure thread pool with 90% CPU cap to keep system responsive
     floodfill_cache::configure_rayon_thread_pool(0.9);
-    logger::info!("Configured thread pool with 90% CPU limit");
+    info!("Configured thread pool with 90% CPU limit");
 
     // Clean up old cached elevation tiles on startup
     elevation_data::cleanup_old_cached_tiles();
-    logger::info!("Cleaned up cached elevation tiles");
+    info!("Cleaned up cached elevation tiles");
 
     let version: &str = env!("CARGO_PKG_VERSION");
     let repository: &str = env!("CARGO_PKG_REPOSITORY");
-    println!(
-        r#"
+    if use_colors {
+        println!(
+            r#"
         ▄████████    ▄████████ ███▄▄▄▄    ▄█     ▄████████
         ███    ███   ███    ███ ███▀▀▀██▄ ███    ███    ███
         ███    ███   ███    ███ ███   ███ ███▌   ███    █▀
@@ -88,29 +96,31 @@ fn run_cli() {
                           version {}
                 {}
         "#,
-        version,
-        repository.bright_white().bold()
-    );
+            version,
+            repository.bright_white().bold()
+        );
+    }
 
-    logger::info!("Starting Arnis v{}", version);
+    info!("Starting Arnis v{}", version);
 
     // Check for updates
     if let Err(e) = version_check::check_for_updates() {
-        logger::error!("Failed to check for updates: {}", e);
+        error!("Failed to check for updates: {}", e);
     }
 
-    // Parse input arguments
-    let args: Args = Args::parse();
-    logger::info!("Parsed CLI arguments - path: {:?}, bbox: {:?}", args.path, args.bbox);
+    info!(
+        "Parsed CLI arguments - path: {:?}, bbox: {:?}",
+        args.path, args.bbox
+    );
 
     // Fetch data with better error handling
     let raw_data = match &args.file {
         Some(file) => {
-            logger::info!("Loading data from file: {}", file);
+            info!("Loading data from file: {}", file);
             retrieve_data::fetch_data_from_file(file)
         }
         None => {
-            logger::info!("Fetching data from Overpass API");
+            info!("Fetching data from Overpass API");
             retrieve_data::fetch_data_from_overpass(
                 args.bbox,
                 args.debug,
@@ -122,11 +132,11 @@ fn run_cli() {
 
     let raw_data = match raw_data {
         Ok(data) => {
-            logger::info!("Successfully fetched OSM data");
+            info!("Successfully fetched OSM data");
             data
         }
         Err(e) => {
-            logger::error!("Failed to fetch data: {}", e);
+            error!("Failed to fetch data: {}", e);
             std::process::exit(1);
         }
     };
@@ -134,17 +144,17 @@ fn run_cli() {
     let mut ground = ground::generate_ground_data(&args);
 
     // Parse raw data
-    logger::info!("Parsing OSM data...");
+    info!("Parsing OSM data...");
     let (mut parsed_elements, mut xzbbox) =
         osm_parser::parse_osm_data(raw_data, args.bbox, args.scale, args.debug);
-    logger::info!("Parsed {} elements", parsed_elements.len());
-    
+    info!("Parsed {} elements", parsed_elements.len());
+
     parsed_elements
         .sort_by_key(|element: &osm_parser::ProcessedElement| osm_parser::get_priority(element));
 
     // Write the parsed OSM data to a file for inspection
     if args.debug {
-        logger::debug!("Writing parsed OSM data to debug file");
+        debug!("Writing parsed OSM data to debug file");
         let mut buf = std::io::BufWriter::new(
             fs::File::create("parsed_osm_data.txt").expect("Failed to create output file"),
         );
@@ -161,13 +171,13 @@ fn run_cli() {
     }
 
     // Transform map (parsed_elements). Operations are defined in a json file
-    logger::info!("Applying map transformations...");
+    info!("Applying map transformations...");
     map_transformation::transform_map(&mut parsed_elements, &mut xzbbox, &mut ground);
 
     // Generate world
-    logger::info!("Starting world generation...");
+    info!("Starting world generation...");
     let _ = data_processing::generate_world(parsed_elements, xzbbox, args.bbox, ground, &args);
-    logger::info!("World generation completed");
+    info!("World generation completed");
 }
 
 fn main() {

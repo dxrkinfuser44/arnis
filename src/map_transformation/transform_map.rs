@@ -1,16 +1,17 @@
 use super::operator::operator_vec_from_json;
 use crate::coordinate_system::cartesian::XZBBox;
+use crate::debug;
 use crate::ground::Ground;
+use crate::info;
 use crate::osm_parser::ProcessedElement;
 use crate::progress::emit_gui_progress_update;
-use colored::Colorize;
 
 pub fn transform_map(
     elements: &mut Vec<ProcessedElement>,
     xzbbox: &mut XZBBox,
     ground: &mut Ground,
 ) {
-    println!("{} Transforming map...", "[4/7]".bold());
+    info!("[4/7] Transforming map");
     emit_gui_progress_update(20.0, "Transforming map...");
 
     let opjson_string = include_str!("../../tests/map_transformation/example_transformations.json");
@@ -31,11 +32,12 @@ pub fn transform_map(
 
     for op in ops {
         let current_progress_prcs = 20.0 + (iop as f64 * progress_increment_prcs);
-        //let message = format!("Applying operation: {}, {}/{}", op.repr(), iop, nop);
         emit_gui_progress_update(current_progress_prcs, "");
 
         iop += 1;
 
+        let op_name = op.repr();
+        debug!("Applying transformation {}/{}: {}", iop - 1, nop, op_name);
         op.operate(elements, xzbbox, ground);
     }
 

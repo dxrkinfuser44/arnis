@@ -1,4 +1,5 @@
 use crate::coordinate_system::geographic::LLBBox;
+use crate::logger::LogLevel;
 use clap::Parser;
 use std::path::PathBuf;
 use std::time::Duration;
@@ -61,6 +62,18 @@ pub struct Args {
     #[arg(long)]
     pub debug: bool,
 
+    /// Override the log level (error|warn|info|debug|trace)
+    #[arg(long, value_parser = parse_log_level)]
+    pub log_level: Option<LogLevel>,
+
+    /// Disable timestamps in log output
+    #[arg(long)]
+    pub no_log_timestamps: bool,
+
+    /// Disable colored log output
+    #[arg(long)]
+    pub no_log_colors: bool,
+
     /// Set floodfill timeout (seconds) (optional)
     #[arg(long, value_parser = parse_duration)]
     pub timeout: Option<Duration>,
@@ -84,6 +97,19 @@ fn validate_minecraft_world_path(path: &str) -> Result<PathBuf, String> {
 fn parse_duration(arg: &str) -> Result<std::time::Duration, std::num::ParseIntError> {
     let seconds = arg.parse()?;
     Ok(std::time::Duration::from_secs(seconds))
+}
+
+fn parse_log_level(value: &str) -> Result<LogLevel, String> {
+    match value.to_ascii_lowercase().as_str() {
+        "error" => Ok(LogLevel::Error),
+        "warn" | "warning" => Ok(LogLevel::Warning),
+        "info" => Ok(LogLevel::Info),
+        "debug" => Ok(LogLevel::Debug),
+        "trace" => Ok(LogLevel::Trace),
+        other => Err(format!(
+            "Invalid log level '{other}'. Use one of: error, warn, info, debug, trace"
+        )),
+    }
 }
 
 #[cfg(test)]
@@ -139,5 +165,23 @@ mod tests {
         // The --gui flag isn't used here, ugh. TODO clean up main.rs and its argparse usage.
         // let cmd = ["arnis", "--gui"];
         // assert!(Args::try_parse_from(cmd.iter()).is_ok());
+    }
+
+    #[test]
+    fn parses_log_level_flag() {
+        let tmpdir = minecraft_tmpdir();
+        let tmp_path = tmpdir.path().to_str().unwrap();
+
+        let cmd = [
+            "arnis",
+            "--path",
+            tmp_path,
+            "--bbox",
+            "1,2,3,4",
+            "--log-level",
+            "trace",
+        ];
+        let args = Args::parse_from(cmd.iter());
+        assert_eq!(args.log_level, Some(LogLevel::Trace));
     }
 }

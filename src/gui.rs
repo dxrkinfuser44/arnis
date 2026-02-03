@@ -1010,6 +1010,9 @@ fn gui_start_generation(
                 fillground: fillground_enabled,
                 city_boundaries: city_boundaries_enabled,
                 debug: false,
+                log_level: None,
+                no_log_timestamps: false,
+                no_log_colors: false,
                 timeout: Some(std::time::Duration::from_secs(40)),
             };
 

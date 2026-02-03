@@ -1,10 +1,11 @@
 use crate::args::Args;
 use crate::coordinate_system::{cartesian::XZPoint, geographic::LLBBox};
+use crate::debug;
 use crate::elevation_data::{fetch_elevation_data, ElevationData};
+use crate::info;
 use crate::progress::emit_gui_progress_update;
 #[cfg(feature = "gui")]
 use crate::telemetry::{send_log, LogLevel};
-use colored::Colorize;
 use image::{Rgb, RgbImage};
 
 /// Represents terrain data and elevation settings
@@ -146,10 +147,11 @@ impl Ground {
 
 pub fn generate_ground_data(args: &Args) -> Ground {
     if args.terrain {
-        println!("{} Fetching elevation...", "[3/7]".bold());
+        info!("[3/7] Fetching elevation tiles");
         emit_gui_progress_update(14.0, "Fetching elevation...");
         let ground = Ground::new_enabled(&args.bbox, args.scale, args.ground_level);
         if args.debug {
+            debug!("Saving elevation debug image to elevation_debug.png");
             ground.save_debug_image("elevation_debug");
         }
         return ground;

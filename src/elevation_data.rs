@@ -2,7 +2,9 @@
 use crate::telemetry::{send_log, LogLevel};
 use crate::{
     coordinate_system::{geographic::LLBBox, transformation::geo_distance},
+    debug, info,
     progress::emit_gui_progress_update,
+    warn,
 };
 use image::Rgb;
 use rayon::prelude::*;
@@ -115,10 +117,13 @@ pub fn cleanup_old_cached_tiles() {
     }
 
     if deleted_count > 0 {
-        println!("Cleaned up {deleted_count} old cached elevation tiles (older than {TILE_CACHE_MAX_AGE_DAYS} days)");
+        info!(
+            "Cleaned up {deleted_count} old cached elevation tiles (>{} days)",
+            TILE_CACHE_MAX_AGE_DAYS
+        );
     }
     if error_count > 1 {
-        eprintln!("Warning: Failed to delete {error_count} old cached tiles");
+        warn!("Failed to delete {error_count} old cached tiles");
     }
 }
 
@@ -153,7 +158,7 @@ fn download_tile(
     zoom: u8,
     tile_path: &Path,
 ) -> Result<image::ImageBuffer<Rgb<u8>, Vec<u8>>, String> {
-    println!("Fetching tile x={tile_x},y={tile_y},z={zoom} from AWS Terrain Tiles");
+    debug!("Fetching tile z{} x{} y{}", zoom, tile_x, tile_y);
     let url: String = AWS_TERRARIUM_URL
         .replace("{z}", &zoom.to_string())
         .replace("{x}", &tile_x.to_string())
@@ -165,13 +170,13 @@ fn download_tile(
         if attempt > 0 {
             // Exponential backoff: 500ms, 1000ms, 2000ms...
             let delay_ms = TILE_DOWNLOAD_RETRY_BASE_DELAY_MS * (1 << (attempt - 1));
-            eprintln!(
-                "Retry attempt {}/{} for tile x={},y={},z={} after {}ms delay",
+            warn!(
+                "Retry {}/{} for tile z{} x{} y{} after {}ms",
                 attempt,
                 TILE_DOWNLOAD_MAX_RETRIES - 1,
+                zoom,
                 tile_x,
                 tile_y,
-                zoom,
                 delay_ms
             );
             std::thread::sleep(std::time::Duration::from_millis(delay_ms));
@@ -182,9 +187,9 @@ fn download_tile(
             Err(e) => {
                 last_error = e;
                 if attempt < TILE_DOWNLOAD_MAX_RETRIES - 1 {
-                    eprintln!(
-                        "Tile download failed for x={},y={},z={}: {}",
-                        tile_x, tile_y, zoom, last_error
+                    warn!(
+                        "Tile download failed for z{} x{} y{}: {}",
+                        zoom, tile_x, tile_y, last_error
                     );
                 }
             }

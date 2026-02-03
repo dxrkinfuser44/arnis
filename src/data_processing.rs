@@ -46,14 +46,15 @@ use crate::coordinate_system::geographic::LLBBox;
 use crate::element_processing::*;
 use crate::floodfill_cache::FloodFillCache;
 use crate::ground::Ground;
+use crate::info;
 use crate::map_renderer;
 use crate::osm_parser::ProcessedElement;
 use crate::progress::{emit_gui_progress_update, emit_map_preview_ready, emit_open_mcworld_file};
 #[cfg(feature = "gui")]
 use crate::telemetry::{send_log, LogLevel};
 use crate::urban_ground;
+use crate::warn;
 use crate::world_editor::{WorldEditor, WorldFormat};
-use colored::Colorize;
 use indicatif::{ProgressBar, ProgressStyle};
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -156,7 +157,7 @@ pub fn generate_world_with_options(
     );
     let ground = Arc::new(ground);
 
-    println!("{} Processing data...", "[4/7]".bold());
+    info!("[4/7] Processing vector data");
 
     // Build highway connectivity map once before processing
     let highway_connectivity = highways::build_highway_connectivity_map(&elements);
@@ -164,7 +165,7 @@ pub fn generate_world_with_options(
     // Set ground reference in the editor to enable elevation-aware block placement
     editor.set_ground(Arc::clone(&ground));
 
-    println!("{} Processing terrain...", "[5/7]".bold());
+    info!("[5/7] Processing terrain layers");
     emit_gui_progress_update(25.0, "Processing terrain...");
 
     // Pre-compute all flood fills in parallel for better CPU utilization
@@ -392,7 +393,7 @@ pub fn generate_world_with_options(
 
     let mut block_counter: u64 = 0;
 
-    println!("{} Generating ground...", "[6/7]".bold());
+    info!("[6/7] Generating ground");
     emit_gui_progress_update(70.0, "Generating ground...");
 
     let ground_pb: ProgressBar = ProgressBar::new(total_blocks);
@@ -505,6 +506,7 @@ pub fn generate_world_with_options(
     // Save world
     editor.save();
 
+    info!("[7/7] Finalizing world");
     emit_gui_progress_update(99.0, "Finalizing world...");
 
     // Update player spawn Y coordinate based on terrain height after generation
@@ -529,7 +531,7 @@ pub fn generate_world_with_options(
             ground.as_ref(),
         ) {
             let warning_msg = format!("Failed to update spawn point Y coordinate: {}", e);
-            eprintln!("Warning: {}", warning_msg);
+            warn!("{}", warning_msg);
             #[cfg(feature = "gui")]
             send_log(LogLevel::Warning, &warning_msg);
         }

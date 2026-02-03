@@ -84,7 +84,7 @@ impl OsmData {
     pub fn is_empty(&self) -> bool {
         self.elements.is_empty()
     }
-    
+
     /// Returns the number of elements in the OSM data
     pub fn len(&self) -> usize {
         self.elements.len()
@@ -285,7 +285,7 @@ pub fn parse_osm_data(
         // Each way typically has 5-20 nodes; use actual node count if available
         let node_count = element.nodes.as_ref().map(|n| n.len()).unwrap_or(0);
         let mut nodes: Vec<ProcessedNode> = Vec::with_capacity(node_count);
-        
+
         if let Some(node_ids) = &element.nodes {
             for &node_id in node_ids {
                 if let Some(node) = nodes_map.get(&node_id) {

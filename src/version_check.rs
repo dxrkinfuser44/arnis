@@ -1,4 +1,4 @@
-use colored::Colorize;
+use crate::warn;
 use reqwest::blocking::Client;
 use reqwest::{Error as ReqwestError, StatusCode};
 use semver::Version;
@@ -34,11 +34,9 @@ pub fn check_for_updates() -> Result<bool, Box<dyn Error>> {
 
             // Compare versions
             if remote_version > local_version {
-                println!(
-                    "{} {} -> {}",
-                    "A new version is available:".yellow().bold(),
-                    local_version,
-                    remote_version
+                warn!(
+                    "A new version is available: {} -> {}",
+                    local_version, remote_version
                 );
                 return Ok(true); // Newer version is available
             }
@@ -65,7 +63,7 @@ fn extract_version_from_cargo_toml(cargo_toml_contents: &str) -> Result<Version,
 
 /// Handles HTTP errors by printing the status code and a user-friendly message.
 fn handle_http_error(status: StatusCode) {
-    eprintln!(
+    warn!(
         "Failed to fetch remote Cargo.toml: HTTP error {}: {}",
         status.as_u16(),
         status.canonical_reason().unwrap_or("Unknown error")
@@ -75,7 +73,7 @@ fn handle_http_error(status: StatusCode) {
 /// Handles the error for HTTP requests more gracefully, including printing HTTP status codes when applicable.
 fn handle_request_error(err: ReqwestError) {
     if err.is_timeout() {
-        eprintln!("Request timed out. Please check your network connection.");
+        warn!("Request timed out. Please check your network connection.");
     } else if let Some(status) = err.status() {
         handle_http_error(status);
     }

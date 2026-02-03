@@ -1,8 +1,9 @@
 use crate::coordinate_system::geographic::LLBBox;
+use crate::logger;
 use crate::osm_parser::OsmData;
 use crate::progress::{emit_gui_error, emit_gui_progress_update, is_running_with_gui};
 #[cfg(feature = "gui")]
-use crate::telemetry::{send_log, LogLevel};
+use crate::telemetry::{send_log, LogLevel as TelemetryLogLevel};
 use colored::Colorize;
 use rand::seq::SliceRandom;
 use reqwest::blocking::Client;
@@ -14,45 +15,58 @@ use std::io::{self, BufReader, Cursor, Write};
 use std::process::Command;
 use std::time::Duration;
 
-/// Function to download data using reqwest
+/// Function to download data using reqwest with proper error context
 fn download_with_reqwest(url: &str, query: &str) -> Result<String, Box<dyn std::error::Error>> {
+    logger::debug!("Building HTTP client for request to {}", url);
     let client: Client = ClientBuilder::new()
         .timeout(Duration::from_secs(360))
-        .build()?;
+        .build()
+        .map_err(|e| format!("Failed to build HTTP client: {}", e))?;
 
+    logger::debug!("Sending request to {}", url);
     let response: Result<reqwest::blocking::Response, reqwest::Error> =
         client.get(url).query(&[("data", query)]).send();
 
     match response {
         Ok(resp) => {
             emit_gui_progress_update(3.0, "Downloading data...");
-            if resp.status().is_success() {
-                let text = resp.text()?;
+            let status = resp.status();
+            if status.is_success() {
+                let text = resp.text()
+                    .map_err(|e| format!("Failed to read response body: {}", e))?;
                 if text.is_empty() {
-                    return Err("Error! Received invalid from server".into());
+                    logger::error!("Received empty response from server");
+                    return Err("Received empty response from server".into());
                 }
+                logger::debug!("Successfully downloaded {} bytes", text.len());
                 Ok(text)
             } else {
-                Err(format!("Error! Received response code: {}", resp.status()).into())
+                let err_msg = format!("Server returned error status: {}", status);
+                logger::error!("{}", err_msg);
+                Err(err_msg.into())
             }
         }
         Err(e) => {
             if e.is_timeout() {
                 let msg = "Request timed out. Try selecting a smaller area.";
+                logger::error!("{}", msg);
                 eprintln!("{}", format!("Error! {msg}").red().bold());
                 Err(msg.into())
             } else if e.is_connect() {
                 let msg = "No internet connection.";
+                logger::error!("{}", msg);
                 eprintln!("{}", format!("Error! {msg}").red().bold());
                 Err(msg.into())
             } else {
                 #[cfg(feature = "gui")]
                 send_log(
-                    LogLevel::Error,
+                    TelemetryLogLevel::Error,
                     &format!("Request error in download_with_reqwest: {e}"),
                 );
+                let err_msg = format!("Request failed: {e:.52}");
+                logger::error!("{}", err_msg);
                 eprintln!("{}", format!("Error! {e:.52}").red().bold());
-                Err(format!("{e:.52}").into())
+                Err(err_msg.into())
             }
         }
     }
@@ -86,24 +100,37 @@ fn download_with_wget(url: &str, query: &str) -> io::Result<String> {
     }
 }
 
-pub fn fetch_data_from_file(file: &str) -> Result<OsmData, Box<dyn std::error::Error>> {
+/// Load OSM data from a JSON file with proper error context
+pub fn fetch_data_from_file(file_path: &str) -> Result<OsmData, Box<dyn std::error::Error>> {
+    logger::info!("Loading data from file: {}", file_path);
     println!("{} Loading data from file...", "[1/7]".bold());
     emit_gui_progress_update(1.0, "Loading data from file...");
 
-    let file: File = File::open(file)?;
-    let reader: BufReader<File> = BufReader::new(file);
+    let file = File::open(file_path)
+        .map_err(|e| format!("Failed to open file '{}': {}", file_path, e))?;
+    
+    let reader = BufReader::new(file);
     let mut deserializer = serde_json::Deserializer::from_reader(reader);
-    let data: OsmData = OsmData::deserialize(&mut deserializer)?;
+    
+    let data: OsmData = OsmData::deserialize(&mut deserializer)
+        .map_err(|e| format!("Failed to parse JSON in file '{}': {}", file_path, e))?;
+    
+    logger::info!("Successfully loaded {} elements from file", data.len());
+    
     Ok(data)
 }
 
-/// Main function to fetch data
+/// Main function to fetch data from Overpass API
+/// 
+/// Attempts to fetch data from Overpass API servers with fallback options.
+/// Will retry with fallback servers if the primary servers fail.
 pub fn fetch_data_from_overpass(
     bbox: LLBBox,
     debug: bool,
     download_method: &str,
     save_file: Option<&str>,
 ) -> Result<OsmData, Box<dyn std::error::Error>> {
+    logger::info!("Fetching data from Overpass API");
     println!("{} Fetching data...", "[1/7]".bold());
     emit_gui_progress_update(1.0, "Fetching data...");
 
@@ -112,12 +139,15 @@ pub fn fetch_data_from_overpass(
         "https://overpass-api.de/api/interpreter",
         "https://lz4.overpass-api.de/api/interpreter",
         "https://z.overpass-api.de/api/interpreter",
-        //"https://overpass.kumi.systems/api/interpreter", // This server is not reliable anymore
-        //"https://overpass.private.coffee/api/interpreter", // This server is not reliable anymore
     ];
     let fallback_api_servers: Vec<&str> =
         vec!["https://maps.mail.ru/osm/tools/overpass/api/interpreter"];
-    let mut url: &&str = api_servers.choose(&mut rand::thread_rng()).unwrap();
+    
+    // Safely select a random server with fallback
+    let mut url: &&str = api_servers.choose(&mut rand::thread_rng())
+        .unwrap_or(&"https://overpass-api.de/api/interpreter");
+    
+    logger::debug!("Selected primary API server: {}", url);
 
     // Generate Overpass API query for bounding box
     let query: String = format!(
@@ -165,11 +195,13 @@ pub fn fetch_data_from_overpass(
     );
 
     {
-        // Fetch data from Overpass API
+        // Fetch data from Overpass API with retry logic
         let mut attempt = 0;
-        let max_attempts = 1;
+        let max_attempts = 2; // Try primary + one fallback
         let response: String = loop {
+            logger::info!("Attempt {}: Downloading from {} using {}", attempt + 1, url, download_method);
             println!("Downloading from {url} with method {download_method}...");
+            
             let result = match download_method {
                 "requests" => download_with_reqwest(url, &query),
                 "curl" => download_with_curl(url, &query).map_err(|e| e.into()),
@@ -178,44 +210,60 @@ pub fn fetch_data_from_overpass(
             };
 
             match result {
-                Ok(response) => break response,
+                Ok(response) => {
+                    logger::info!("Successfully downloaded data on attempt {}", attempt + 1);
+                    break response;
+                }
                 Err(error) => {
-                    if attempt >= max_attempts {
-                        return Err(error);
+                    logger::warn!("Attempt {} failed: {}", attempt + 1, error);
+                    if attempt >= max_attempts - 1 {
+                        return Err(format!("Failed to fetch data after {} attempts: {}", max_attempts, error).into());
                     }
 
                     println!("Request failed. Switching to fallback url...");
                     url = fallback_api_servers
                         .choose(&mut rand::thread_rng())
-                        .unwrap();
+                        .unwrap_or(&"https://maps.mail.ru/osm/tools/overpass/api/interpreter");
                     attempt += 1;
                 }
             }
         };
 
+        // Save response to file if requested
         if let Some(save_file) = save_file {
-            let mut file: File = File::create(save_file)?;
-            file.write_all(response.as_bytes())?;
+            logger::info!("Saving API response to: {}", save_file);
+            let mut file = File::create(save_file)
+                .map_err(|e| format!("Failed to create save file '{}': {}", save_file, e))?;
+            file.write_all(response.as_bytes())
+                .map_err(|e| format!("Failed to write to save file '{}': {}", save_file, e))?;
             println!("API response saved to: {save_file}");
         }
 
+        // Parse JSON response
+        logger::debug!("Parsing JSON response");
         let mut deserializer =
             serde_json::Deserializer::from_reader(Cursor::new(response.as_bytes()));
-        let data: OsmData = OsmData::deserialize(&mut deserializer)?;
+        let data: OsmData = OsmData::deserialize(&mut deserializer)
+            .map_err(|e| format!("Failed to parse API response: {}", e))?;
 
+        // Check if data is empty
         if data.is_empty() {
             if let Some(remark) = data.remark.as_deref() {
                 // Check if the remark mentions memory or other runtime errors
                 if remark.contains("runtime error") && remark.contains("out of memory") {
-                    eprintln!("{}", "Error! The query ran out of memory on the Overpass API server. Try using a smaller area.".red().bold());
+                    let msg = "The query ran out of memory on the Overpass API server. Try using a smaller area.";
+                    logger::error!("{}", msg);
+                    eprintln!("{}", format!("Error! {}", msg).red().bold());
                     emit_gui_error("Try using a smaller area.");
                 } else {
                     // Handle other Overpass API errors if present in the remark field
+                    logger::error!("API returned error: {}", remark);
                     eprintln!("{}", format!("Error! API returned: {remark}").red().bold());
                     emit_gui_error(&format!("API returned: {remark}"));
                 }
             } else {
                 // General case for when there are no elements and no specific remark
+                logger::error!("API returned no data");
                 eprintln!(
                     "{}",
                     "Error! API returned no data. Please try again!"
@@ -243,18 +291,35 @@ pub fn fetch_data_from_overpass(
 }
 
 /// Fetches a short area name using Nominatim for the given lat/lon
+/// 
+/// Uses the Nominatim reverse geocoding API to get a human-readable
+/// area name from coordinates. Returns None if no name can be determined.
 pub fn fetch_area_name(lat: f64, lon: f64) -> Result<Option<String>, Box<dyn std::error::Error>> {
-    let client = Client::builder().timeout(Duration::from_secs(20)).build()?;
+    logger::debug!("Fetching area name for coordinates: {}, {}", lat, lon);
+    
+    let client = Client::builder()
+        .timeout(Duration::from_secs(20))
+        .build()
+        .map_err(|e| format!("Failed to build HTTP client: {}", e))?;
 
-    let url = format!("https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat={lat}&lon={lon}&addressdetails=1");
+    let url = format!(
+        "https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat={lat}&lon={lon}&addressdetails=1"
+    );
 
-    let resp = client.get(&url).header("User-Agent", "arnis-rust").send()?;
+    let resp = client
+        .get(&url)
+        .header("User-Agent", "arnis-rust")
+        .send()
+        .map_err(|e| format!("Failed to query Nominatim API: {}", e))?;
 
     if !resp.status().is_success() {
+        logger::debug!("Nominatim API returned non-success status: {}", resp.status());
         return Ok(None);
     }
 
-    let json: Value = resp.json()?;
+    let json: Value = resp
+        .json()
+        .map_err(|e| format!("Failed to parse Nominatim response: {}", e))?;
 
     if let Some(address) = json.get("address") {
         let fields = ["city", "town", "village", "county", "borough", "suburb"];
@@ -262,15 +327,19 @@ pub fn fetch_area_name(lat: f64, lon: f64) -> Result<Option<String>, Box<dyn std
             if let Some(name) = address.get(*field).and_then(|v| v.as_str()) {
                 let mut name_str = name.to_string();
 
-                // Remove "City of " prefix
+                // Remove "City of " prefix safely
                 if name_str.to_lowercase().starts_with("city of ") {
-                    name_str = name_str[name_str.find(" of ").unwrap() + 4..].to_string();
+                    if let Some(idx) = name_str.find(" of ") {
+                        name_str = name_str[idx + 4..].to_string();
+                    }
                 }
 
+                logger::debug!("Found area name: {}", name_str);
                 return Ok(Some(name_str));
             }
         }
     }
 
+    logger::debug!("No area name found for coordinates: {}, {}", lat, lon);
     Ok(None)
 }

@@ -41,6 +41,11 @@ impl OsmData {
     pub fn is_empty(&self) -> bool {
         self.elements.is_empty()
     }
+    
+    /// Returns the number of elements in the OSM data
+    pub fn len(&self) -> usize {
+        self.elements.len()
+    }
 }
 
 struct SplitOsmData {

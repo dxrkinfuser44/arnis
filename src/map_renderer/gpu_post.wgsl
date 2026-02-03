@@ -12,6 +12,9 @@ var<storage, read> input_data: array<u32>;
 var<storage, read_write> output_data: array<u32>;
 
 @group(0) @binding(2)
+var<storage, read> heights: array<i32>;
+
+@group(0) @binding(3)
 var<uniform> params: Params;
 
 fn unpack_color(packed: u32) -> vec4<f32> {
@@ -46,6 +49,15 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     let gamma = 0.95;
     var rgb = pow(color.rgb, vec3<f32>(gamma));
     rgb = ((rgb - vec3<f32>(0.5)) * contrast) + vec3<f32>(0.5);
+
+    // Elevation shading using height buffer
+    let height = heights[index];
+    if (height > -100000) {
+        let normalized = clamp(f32(height) / 100.0, -1.0, 1.0);
+        let elevation_adjust = select(normalized * 0.20, normalized * 0.20, normalized >= 0.0);
+        let multiplier = 1.10 + elevation_adjust;
+        rgb = clamp(rgb * multiplier, vec3<f32>(0.0), vec3<f32>(1.0));
+    }
 
     output_data[index] = pack_color(vec4<f32>(rgb, color.a));
 }

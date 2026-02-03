@@ -13,10 +13,50 @@ use std::fs::File;
 use std::path::Path;
 use std::sync::Mutex;
 
+#[cfg(feature = "gpu")]
+use std::sync::atomic::{AtomicBool, Ordering};
+#[cfg(feature = "gpu")]
+use std::time::Instant;
+
 use crate::debug;
+use crate::info;
 
 #[cfg(feature = "gpu")]
 mod gpu;
+
+#[cfg(feature = "gpu")]
+static GPU_FALLBACK_LOGGED: AtomicBool = AtomicBool::new(false);
+
+const HEIGHT_SENTINEL: i32 = -1_000_000;
+
+struct PixelSample {
+    x: u32,
+    z: u32,
+    color: Rgb<u8>,
+    height: i32,
+}
+
+struct PixelBuffers {
+    img: RgbImage,
+    heights: Vec<i32>,
+    width: u32,
+}
+
+impl PixelBuffers {
+    fn new(width: u32, height: u32) -> Self {
+        Self {
+            img: RgbImage::from_pixel(width, height, Rgb([255, 255, 255])),
+            heights: vec![HEIGHT_SENTINEL; (width * height) as usize],
+            width,
+        }
+    }
+
+    fn set_sample(&mut self, sample: PixelSample) {
+        let idx = (sample.z * self.width + sample.x) as usize;
+        self.heights[idx] = sample.height;
+        self.img.put_pixel(sample.x, sample.z, sample.color);
+    }
+}
 
 /// Pre-computed block colors for fast lookup
 static BLOCK_COLORS: Lazy<FnvHashMap<&'static str, Rgb<u8>>> = Lazy::new(get_block_colors);
@@ -37,8 +77,8 @@ pub fn render_world_map(
         return Err("Invalid world bounds".to_string());
     }
 
-    // Use Mutex for thread-safe image access
-    let img = Mutex::new(RgbImage::from_pixel(width, height, Rgb([255, 255, 255])));
+    // Use Mutex for thread-safe buffer access
+    let buffers = Mutex::new(PixelBuffers::new(width, height));
 
     // Calculate region range
     let min_region_x = min_x >> 9; // divide by 512 (32 chunks * 16 blocks)
@@ -74,12 +114,14 @@ pub fn render_world_map(
                     max_z,
                 );
 
-                // Then batch-write to image under lock
+                // Then batch-write to buffers under lock
                 if !pixels.is_empty() {
-                    let mut img_guard = img.lock().unwrap();
-                    for (x, z, color) in pixels {
-                        if x < img_guard.width() && z < img_guard.height() {
-                            img_guard.put_pixel(x, z, color);
+                    let mut buffer_guard = buffers.lock().unwrap();
+                    for sample in pixels {
+                        if sample.x < buffer_guard.img.width()
+                            && sample.z < buffer_guard.img.height()
+                        {
+                            buffer_guard.set_sample(sample);
                         }
                     }
                 }
@@ -89,18 +131,37 @@ pub fn render_world_map(
 
     // Save the image
     let output_path = world_dir.join("arnis_world_map.png");
-    let mut final_img = img.into_inner().unwrap();
+    let mut buffers = buffers.into_inner().unwrap();
 
     #[cfg(feature = "gpu")]
     {
-        if let Ok(adjusted) = gpu::apply_gpu_post_process(&final_img) {
-            final_img = adjusted;
-        } else {
-            debug!("GPU post-process unavailable, using CPU image");
+        let start = Instant::now();
+        match gpu::apply_gpu_post_process_with_heights(&buffers.img, &buffers.heights) {
+            Ok((adjusted, adapter_info)) => {
+                buffers.img = adjusted;
+                debug!(
+                    "GPU post-process on {} ({}) in {}ms",
+                    adapter_info.name,
+                    adapter_info.backend,
+                    start.elapsed().as_millis()
+                );
+            }
+            Err(err) => {
+                if !GPU_FALLBACK_LOGGED.swap(true, Ordering::Relaxed) {
+                    info!("GPU post-process unavailable: {err}");
+                }
+                apply_elevation_shading_cpu(&mut buffers.img, &buffers.heights);
+            }
         }
     }
 
-    final_img
+    #[cfg(not(feature = "gpu"))]
+    {
+        apply_elevation_shading_cpu(&mut buffers.img, &buffers.heights);
+    }
+
+    buffers
+        .img
         .save(&output_path)
         .map_err(|e| format!("Failed to save map image: {}", e))?;
 
@@ -116,7 +177,7 @@ fn render_region_to_pixels(
     min_z: i32,
     max_x: i32,
     max_z: i32,
-) -> Vec<(u32, u32, Rgb<u8>)> {
+) -> Vec<PixelSample> {
     let mut pixels = Vec::new();
     let region_base_x = region_x * 512;
     let region_base_z = region_z * 512;
@@ -159,7 +220,7 @@ fn render_region_to_pixels(
 #[allow(clippy::too_many_arguments)]
 fn render_chunk_to_pixels(
     chunk_data: &[u8],
-    pixels: &mut Vec<(u32, u32, Rgb<u8>)>,
+    pixels: &mut Vec<PixelSample>,
     chunk_base_x: i32,
     chunk_base_z: i32,
     min_x: i32,
@@ -208,15 +269,29 @@ fn render_chunk_to_pixels(
                     .copied()
                     .unwrap_or_else(|| get_fallback_color(&block_name));
 
-                // Apply elevation shading
-                let color = apply_elevation_shading(base_color, world_y);
-
                 let img_x = (world_x - min_x) as u32;
                 let img_z = (world_z - min_z) as u32;
 
-                pixels.push((img_x, img_z, color));
+                pixels.push(PixelSample {
+                    x: img_x,
+                    z: img_z,
+                    color: base_color,
+                    height: world_y,
+                });
             }
         }
+    }
+}
+
+fn apply_elevation_shading_cpu(img: &mut RgbImage, heights: &[i32]) {
+    let width = img.width();
+    for (x, y, pixel) in img.enumerate_pixels_mut() {
+        let idx = (y * width + x) as usize;
+        let height = heights[idx];
+        if height == HEIGHT_SENTINEL {
+            continue;
+        }
+        *pixel = apply_elevation_shading(*pixel, height);
     }
 }
 

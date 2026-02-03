@@ -12,68 +12,154 @@
 </head>
 
 <body>
-  <main class="container">
-    <div class="row">
-      <a href="https://arnismc.com" target="_blank">
-        <img src="./images/logo.png" id="arnis-logo" class="logo arnis" alt="Arnis Logo" style="width: 35%; height: auto;">
-      </a>
-    </div>
+  <div class="app-background">
+    <div class="grid-overlay"></div>
+    <div class="orb orb-one"></div>
+    <div class="orb orb-two"></div>
+  </div>
 
-    <div class="flex-container">
-      <!-- Left Box: Map -->
-      <section class="section map-box">
-        <iframe src="maps.html" width="100%" height="100%" class="map-container" title="Map Picker"></iframe>
-      </section>
+  <main class="app-shell">
+    <header class="hero">
+      <div class="hero-branding">
+        <a href="https://arnismc.com" target="_blank" class="brand-link" aria-label="Arnis website">
+          <img src="./images/logo.png" id="arnis-logo" alt="Arnis Logo" />
+        </a>
+        <div class="hero-copy">
+          <p class="eyebrow">Minecraft × Reality</p>
+          <h1>Bring real cities into Minecraft within minutes.</h1>
+          <p class="lead">
+            Draw your bounding box, pick your world target, and let Arnis stitch OpenStreetMap data into a living,
+            explorable Minecraft experience.
+          </p>
+          <div class="hero-pills">
+            <span class="hero-pill">Precise terrain + elevation</span>
+            <span class="hero-pill">Buildings, roads, vegetation</span>
+            <span class="hero-pill">Java & Bedrock workflows</span>
+          </div>
+        </div>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-card">
+          <span class="stat-label">Workflow</span>
+          <span class="stat-value">Pick → Tune → Generate</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Formats</span>
+          <span class="stat-value">Java & Bedrock</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Status</span>
+          <span class="stat-value">Live telemetry optional</span>
+        </div>
+      </div>
+    </header>
 
-      <!-- Right Box: Directory Selection, Start Button, and Progress Bar -->
-      <section class="section controls-box">
-        <div class="controls-content">
-          <div class="controls-top">
-            <!-- World Selection Container -->
-            <div class="world-selection-container">
-              <div class="tooltip" style="width: 100%;">
-                <button type="button" id="choose-world-btn" onclick="openWorldPicker()" class="choose-world-btn">
-                  <span id="choose_world">Choose World</span>
-                  <br>
-                  <span id="selected-world" style="font-size: 0.8em; color: #fecc44; display: block; margin-top: 4px;" data-localize="no_world_selected">
-                    No world selected
-                  </span>
-                </button>
-              </div>
-              <!-- World Format Toggle -->
-              <div class="format-toggle-container">
-                <button type="button" id="format-java" class="format-toggle-btn format-active" onclick="setWorldFormat('java')">
-                  Java
-                </button>
-                <button type="button" id="format-bedrock" class="format-toggle-btn" onclick="setWorldFormat('bedrock')">
-                  Bedrock
-                </button>
-              </div>
+    <section class="workspace-grid">
+      <article class="panel map-panel">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Interactive map</p>
+            <h3>Mark the exact slice of the planet you want to transform.</h3>
+          </div>
+          <div class="panel-chips">
+            <span class="chip">Drag + draw rectangle</span>
+            <span class="chip">Scroll to zoom</span>
+          </div>
+        </div>
+        <iframe src="maps.html" class="map-canvas map-container" title="Map Picker"></iframe>
+        <div class="map-hints">
+          <p>Tip: Switch tile themes or paste coordinates from the settings panel to align with survey data.</p>
+        </div>
+      </article>
+
+      <article class="panel control-panel">
+        <div class="card world-card">
+          <div class="card-header">
+            <div>
+              <p class="eyebrow">World target</p>
+              <h3>Connect to your Minecraft save.</h3>
             </div>
-            
-            <div class="button-container">
-              <button type="button" id="start-button" class="start-button" onclick="startGeneration()" data-localize="start_generation">Start Generation</button>
-              <button type="button" class="settings-button" onclick="openSettings()" aria-label="Settings">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            <span class="chip accent" id="world-format-label">Format toggle below</span>
+          </div>
+          <div class="world-selection-container">
+            <div class="tooltip">
+              <button type="button" id="choose-world-btn" onclick="openWorldPicker()" class="choose-world-btn">
+                <span id="choose_world">Choose World</span>
+                <span id="selected-world" data-localize="no_world_selected">No world selected</span>
               </button>
             </div>
-            <span id="bbox-selection-info" class="bbox-selection-text" data-localize="select_area_prompt">Select an area on the map using the tools.</span>
-          </div>
-
-          <div class="progress-section">
-            <span id="progress-info" class="progress-info-text"></span>
-            <div class="progress-row">
-              <div class="progress-bar-container">
-                <div class="progress-bar" id="progress-bar"></div>
-              </div>
-              <span id="progress-detail">0%</span>
+            <div class="format-toggle-container">
+              <button type="button" id="format-java" class="format-toggle-btn format-active" onclick="setWorldFormat('java')">
+                Java
+              </button>
+              <button type="button" id="format-bedrock" class="format-toggle-btn" onclick="setWorldFormat('bedrock')">
+                Bedrock
+              </button>
             </div>
           </div>
         </div>
-      </section>
-    </div>
 
-    <!-- World Picker Modal -->
+        <div class="card generation-card">
+          <div class="card-header">
+            <div>
+              <p class="eyebrow">Selection status</p>
+              <h3>Choose a bounding box, then launch generation.</h3>
+            </div>
+          </div>
+          <span id="bbox-selection-info" class="bbox-selection-text" data-localize="select_area_prompt" role="status" aria-live="polite" aria-atomic="true">
+            Select an area on the map using the tools.
+          </span>
+          <div class="button-container">
+            <button type="button" id="start-button" class="start-button" onclick="startGeneration()" data-localize="start_generation">Start Generation</button>
+            <button type="button" class="settings-button" onclick="openSettings()" aria-label="Settings">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="card progress-card">
+          <div class="card-header">
+            <div>
+              <p class="eyebrow">Generation progress</p>
+              <h3>Track every stage from data fetch to block edits.</h3>
+            </div>
+          </div>
+          <div class="progress-section">
+            <span id="progress-info" class="progress-info-text" role="status" aria-live="polite" aria-atomic="true"></span>
+            <div class="progress-row">
+              <div class="progress-bar-container" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <div class="progress-bar" id="progress-bar"></div>
+              </div>
+              <span id="progress-detail" aria-live="polite" aria-atomic="true">0%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card insight-card">
+          <div class="card-header">
+            <div>
+              <p class="eyebrow">Playbook</p>
+              <h3>Capture clean, performant cities.</h3>
+            </div>
+          </div>
+          <ul class="insight-list">
+            <li>Use the Satellite tile theme (Settings → Map Theme) to confirm shoreline accuracy.</li>
+            <li>World Scale 0.8–1.2 keeps builds recognizable while ensuring reasonable chunk counts.</li>
+            <li>Enable city ground for dense downtowns, disable it for rural landscapes.</li>
+            <li>Plan spawn point markers in the map before launching generation.</li>
+          </ul>
+        </div>
+      </article>
+    </section>
+
+    <footer class="footer">
+      <a href="https://github.com/louis-e/arnis" target="_blank" class="footer-link" data-localize="footer_text">
+        © {year} Arnis v{version} by louis-e
+      </a>
+    </footer>
+  </main>
+
+  <!-- World Picker Modal -->
     <div id="world-modal" class="modal" style="display: none;">
       <div class="modal-content">
         <span class="close-button" onclick="closeWorldPicker()">&times;</span>

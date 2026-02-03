@@ -213,6 +213,7 @@ function setupProgressListener() {
   const progressBar = document.getElementById("progress-bar");
   const progressInfo = document.getElementById("progress-info");
   const progressDetail = document.getElementById("progress-detail");
+  const progressContainer = progressBar?.parentElement;
 
   window.__TAURI__.event.listen("progress-update", (event) => {
     const { progress, message } = event.payload;
@@ -220,6 +221,10 @@ function setupProgressListener() {
     if (progress != -1) {
       progressBar.style.width = `${progress}%`;
       progressDetail.textContent = `${Math.round(progress)}%`;
+      if (progressContainer) {
+        const clamped = Math.max(0, Math.min(100, Math.round(progress)));
+        progressContainer.setAttribute("aria-valuenow", clamped.toString());
+      }
     }
 
     if (message != "") {

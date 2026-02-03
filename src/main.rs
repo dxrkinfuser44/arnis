@@ -35,6 +35,7 @@ use clap::Parser;
 use colored::*;
 use logger::LogLevel;
 use std::{env, fs, io::Write};
+use world_editor::MemoryLimiter;
 
 #[cfg(feature = "gui")]
 mod gui;
@@ -69,7 +70,9 @@ fn run_cli() {
     let show_timestamps = !args.no_log_timestamps;
     let use_colors = !args.no_log_colors;
     logger::init(log_level, show_timestamps, use_colors);
+    MemoryLimiter::global().configure(args.memory_limit);
     info!("Tile prefetch set to {}", args.tile_prefetch);
+    info!("Memory limiter set to {}", args.memory_limit);
 
     // Configure thread pool with 90% CPU cap to keep system responsive
     floodfill_cache::configure_rayon_thread_pool(0.9);

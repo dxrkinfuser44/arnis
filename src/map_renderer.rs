@@ -13,6 +13,9 @@ use std::fs::File;
 use std::path::Path;
 use std::sync::Mutex;
 
+#[cfg(feature = "gpu")]
+mod gpu;
+
 /// Pre-computed block colors for fast lookup
 static BLOCK_COLORS: Lazy<FnvHashMap<&'static str, Rgb<u8>>> = Lazy::new(get_block_colors);
 
@@ -84,8 +87,16 @@ pub fn render_world_map(
 
     // Save the image
     let output_path = world_dir.join("arnis_world_map.png");
-    img.into_inner()
-        .unwrap()
+    let mut final_img = img.into_inner().unwrap();
+
+    #[cfg(feature = "gpu")]
+    {
+        if let Ok(adjusted) = gpu::apply_gpu_post_process(&final_img) {
+            final_img = adjusted;
+        }
+    }
+
+    final_img
         .save(&output_path)
         .map_err(|e| format!("Failed to save map image: {}", e))?;
 

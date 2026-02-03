@@ -87,7 +87,12 @@ pub struct WorldEditor<'a> {
 /// pre-empt or cancel work; instead, it delays operations that opt in until
 /// the limiter is available.
 pub struct MemoryLimiter {
-    gate: Mutex<bool>,
+    state: Mutex<LimiterState>,
+}
+
+struct LimiterState {
+    active: usize,
+    limit: usize,
 }
 
 impl MemoryLimiter {
@@ -95,19 +100,28 @@ impl MemoryLimiter {
         use once_cell::sync::Lazy;
         static LIMITER: Lazy<Arc<MemoryLimiter>> = Lazy::new(|| {
             Arc::new(MemoryLimiter {
-                gate: Mutex::new(false),
+                state: Mutex::new(LimiterState {
+                    active: 0,
+                    limit: 1,
+                }),
             })
         });
         Arc::clone(&LIMITER)
+    }
+
+    pub fn configure(&self, limit: usize) {
+        if let Ok(mut state) = self.state.lock() {
+            state.limit = limit.max(1);
+        }
     }
 
     /// Acquire a guard that releases on drop.
     pub fn guard(self: &Arc<Self>) -> MemoryLimiterGuard {
         let start = Instant::now();
         loop {
-            if let Ok(mut in_use) = self.gate.lock() {
-                if !*in_use {
-                    *in_use = true;
+            if let Ok(mut state) = self.state.lock() {
+                if state.active < state.limit {
+                    state.active += 1;
                     return MemoryLimiterGuard {
                         limiter: Arc::clone(self),
                         _acquired_at: start,
@@ -126,8 +140,8 @@ pub struct MemoryLimiterGuard {
 
 impl Drop for MemoryLimiterGuard {
     fn drop(&mut self) {
-        if let Ok(mut in_use) = self.limiter.gate.lock() {
-            *in_use = false;
+        if let Ok(mut state) = self.limiter.state.lock() {
+            state.active = state.active.saturating_sub(1);
         }
     }
 }

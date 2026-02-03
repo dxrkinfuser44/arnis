@@ -78,6 +78,10 @@ pub struct Args {
     #[arg(long, default_value_t = 8)]
     pub tile_prefetch: usize,
 
+    /// Maximum concurrent memory-heavy tasks
+    #[arg(long, default_value_t = 1)]
+    pub memory_limit: usize,
+
     /// Set floodfill timeout (seconds) (optional)
     #[arg(long, value_parser = parse_duration)]
     pub timeout: Option<Duration>,
@@ -205,5 +209,23 @@ mod tests {
         ];
         let args = Args::parse_from(cmd.iter());
         assert_eq!(args.tile_prefetch, 16);
+    }
+
+    #[test]
+    fn parses_memory_limit_flag() {
+        let tmpdir = minecraft_tmpdir();
+        let tmp_path = tmpdir.path().to_str().unwrap();
+
+        let cmd = [
+            "arnis",
+            "--path",
+            tmp_path,
+            "--bbox",
+            "1,2,3,4",
+            "--memory-limit",
+            "2",
+        ];
+        let args = Args::parse_from(cmd.iter());
+        assert_eq!(args.memory_limit, 2);
     }
 }

@@ -83,6 +83,7 @@ fn get_area_name_for_bedrock(bbox: &LLBBox) -> String {
 pub fn run_gui() {
     // Configure thread pool with 90% CPU cap to keep system responsive
     crate::floodfill_cache::configure_rayon_thread_pool(0.9);
+    crate::world_editor::MemoryLimiter::global().configure(1);
 
     // Clean up old cached elevation tiles on startup
     crate::elevation_data::cleanup_old_cached_tiles();
@@ -1014,6 +1015,7 @@ fn gui_start_generation(
                 no_log_timestamps: false,
                 no_log_colors: false,
                 tile_prefetch: 8,
+                memory_limit: 1,
                 timeout: Some(std::time::Duration::from_secs(40)),
             };
 

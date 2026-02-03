@@ -240,10 +240,14 @@ pub fn parse_osm_data(
         println!("Scale factor Z: {}", coord_transformer.scale_factor_z());
     }
 
-    let mut nodes_map: HashMap<u64, ProcessedNode> = HashMap::new();
-    let mut ways_map: HashMap<u64, Arc<ProcessedWay>> = HashMap::new();
+    // Pre-allocate collections with expected capacity to avoid reallocations
+    // Performance: HashMap reallocation is expensive; reserve capacity upfront
+    let mut nodes_map: HashMap<u64, ProcessedNode> = HashMap::with_capacity(data.nodes.len());
+    let mut ways_map: HashMap<u64, Arc<ProcessedWay>> = HashMap::with_capacity(data.ways.len());
 
-    let mut processed_elements: Vec<ProcessedElement> = Vec::new();
+    // Estimate processed elements: typically 70-80% of total elements pass filtering
+    let estimated_elements = (data.total_count() as f64 * 0.75) as usize;
+    let mut processed_elements: Vec<ProcessedElement> = Vec::with_capacity(estimated_elements);
 
     // First pass: store all nodes with Minecraft coordinates and process nodes with tags
     for element in data.nodes {
@@ -277,7 +281,11 @@ pub fn parse_osm_data(
 
     // Second pass: process ways and clip them to bbox
     for element in data.ways {
-        let mut nodes: Vec<ProcessedNode> = vec![];
+        // Pre-allocate nodes vector with expected capacity
+        // Each way typically has 5-20 nodes; use actual node count if available
+        let node_count = element.nodes.as_ref().map(|n| n.len()).unwrap_or(0);
+        let mut nodes: Vec<ProcessedNode> = Vec::with_capacity(node_count);
+        
         if let Some(node_ids) = &element.nodes {
             for &node_id in node_ids {
                 if let Some(node) = nodes_map.get(&node_id) {

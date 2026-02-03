@@ -238,6 +238,11 @@ pub fn current_log_level() -> LogLevel {
     get_min_level()
 }
 
+#[allow(dead_code)]
+pub fn should_log(level: LogLevel) -> bool {
+    level <= get_min_level()
+}
+
 /// Progress logging helper - for structured progress updates
 #[allow(dead_code)]
 pub struct ProgressLogger {

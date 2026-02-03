@@ -1,5 +1,6 @@
 #[cfg(feature = "gui")]
 use crate::telemetry::{send_log, LogLevel};
+use crate::world_editor::MemoryLimiter;
 use crate::{
     coordinate_system::{geographic::LLBBox, transformation::geo_distance},
     debug, info,
@@ -371,14 +372,24 @@ pub fn fetch_elevation_data(
     );
     emit_gui_progress_update(15.0, "Processing elevation...");
 
+    let memory_limiter = MemoryLimiter::global();
+
     for (index, (tile_x, tile_y)) in tiles.iter().copied().enumerate() {
         if index == 0 {
-            prefetch_tiles(&client, zoom, &tile_cache_dir, &tiles, prefetch_limit);
+            if !memory_limiter.is_contended() {
+                prefetch_tiles(&client, zoom, &tile_cache_dir, &tiles, prefetch_limit);
+            } else {
+                debug!("Skipping initial prefetch due to memory limiter contention");
+            }
         }
 
         if prefetch_limit > 0 && index > 0 && index % prefetch_limit == 0 {
             let remaining = &tiles[index..];
-            prefetch_tiles(&client, zoom, &tile_cache_dir, remaining, prefetch_limit);
+            if !memory_limiter.is_contended() {
+                prefetch_tiles(&client, zoom, &tile_cache_dir, remaining, prefetch_limit);
+            } else {
+                debug!("Skipping prefetch due to memory limiter contention");
+            }
         }
 
         let tile_path = tile_cache_dir.join(format!("z{zoom}_x{tile_x}_y{tile_y}.png"));

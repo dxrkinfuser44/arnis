@@ -13,6 +13,8 @@ use std::fs::File;
 use std::path::Path;
 use std::sync::Mutex;
 
+use crate::debug;
+
 #[cfg(feature = "gpu")]
 mod gpu;
 
@@ -93,6 +95,8 @@ pub fn render_world_map(
     {
         if let Ok(adjusted) = gpu::apply_gpu_post_process(&final_img) {
             final_img = adjusted;
+        } else {
+            debug!("GPU post-process unavailable, using CPU image");
         }
     }
 

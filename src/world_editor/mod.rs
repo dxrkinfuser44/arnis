@@ -115,6 +115,13 @@ impl MemoryLimiter {
         }
     }
 
+    pub fn is_contended(&self) -> bool {
+        if let Ok(state) = self.state.lock() {
+            return state.active >= state.limit;
+        }
+        false
+    }
+
     /// Acquire a guard that releases on drop.
     pub fn guard(self: &Arc<Self>) -> MemoryLimiterGuard {
         let start = Instant::now();

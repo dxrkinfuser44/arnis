@@ -1,3 +1,46 @@
+//! OSM Parser Module
+//!
+//! Parses OpenStreetMap data from JSON format into normalized, type-safe structures.
+//! Handles conversion from geographic (lat/lon) to Minecraft block coordinates.
+//!
+//! # Overview
+//!
+//! This module provides a two-stage parsing process:
+//!
+//! 1. **Raw Parsing**: Deserializes Overpass API JSON responses into `OsmElement` structs
+//! 2. **Normalization**: Converts raw elements into `ProcessedElement` types with
+//!    Minecraft coordinates and computed geometric properties
+//!
+//! # Element Types
+//!
+//! OpenStreetMap uses three primary element types, all supported:
+//!
+//! - **Nodes**: Single points with tags (e.g., trees, benches, entrances)
+//! - **Ways**: Ordered lists of nodes forming lines or polygons (e.g., roads, buildings)
+//! - **Relations**: Groups of other elements with roles (e.g., multipolygon buildings, parks)
+//!
+//! # Processing Pipeline
+//!
+//! ```text
+//! OSM JSON → OsmData → SplitOsmData → ProcessedNode/Way/Relation → Sorted Vec
+//!                ↓
+//!         Coordinate transformation (lat/lon → X/Z)
+//!                ↓
+//!         Clipping to bounding box
+//!                ↓
+//!         Priority-based sorting
+//! ```
+//!
+//! # Priority System
+//!
+//! Elements are sorted by processing priority to ensure correct rendering:
+//! - Water areas (highest priority - rendered first/base layer)
+//! - Buildings and landuse
+//! - Highways and railways
+//! - Natural features
+//! - Amenity and leisure features
+//! - Other elements (lowest priority)
+
 use crate::clipping::clip_way_to_bbox;
 use crate::coordinate_system::cartesian::{XZBBox, XZPoint};
 use crate::coordinate_system::geographic::{LLBBox, LLPoint};

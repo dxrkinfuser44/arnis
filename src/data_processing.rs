@@ -1,3 +1,44 @@
+//! Data Processing Module
+//!
+//! This is the core world generation engine that orchestrates the conversion of
+//! OpenStreetMap data into Minecraft worlds. It coordinates all element processing,
+//! terrain generation, and world file output.
+//!
+//! # Pipeline Overview
+//!
+//! The generation process follows these stages:
+//!
+//! 1. **Element Processing** (25% progress): Processes all OSM elements (buildings, roads, etc.)
+//! 2. **Ground Generation** (70-90% progress): Generates terrain and fills underground layers
+//! 3. **World Save** (99% progress): Writes all chunks to disk
+//! 4. **Map Preview** (async): Optional top-down map rendering
+//!
+//! # Memory Management
+//!
+//! The processing pipeline is designed for large datasets:
+//! - Flood fill cache pre-computes and caches expensive polygon operations
+//! - Highway connectivity map prevents redundant calculations
+//! - Building footprints use bitmap storage (~1 bit/coordinate vs 24 bytes in HashSet)
+//! - Urban ground lookup uses cell-based representation (~270 KB vs ~560 MB)
+//!
+//! # Example Usage
+//!
+//! ```rust
+//! use crate::data_processing::{generate_world, GenerationOptions};
+//! use crate::world_editor::WorldFormat;
+//!
+//! // Generate with CLI arguments
+//! let result = generate_world(elements, xzbbox, llbbox, ground, &args);
+//!
+//! // Or with explicit options for Bedrock support
+//! let options = GenerationOptions {
+//!     path: PathBuf::from("/path/to/world"),
+//!     format: WorldFormat::BedrockMcWorld,
+//!     level_name: Some("My World".to_string()),
+//!     spawn_point: Some((0, 0)),
+//! };
+//! ```
+
 use crate::args::Args;
 use crate::block_definitions::{BEDROCK, DIRT, GRASS_BLOCK, SMOOTH_STONE, STONE};
 use crate::coordinate_system::cartesian::XZBBox;
@@ -19,7 +60,30 @@ use std::sync::Arc;
 
 pub const MIN_Y: i32 = -64;
 
-/// Generation options that can be passed separately from CLI Args
+/// Generation options for world creation.
+///
+/// Unlike CLI Args, this struct provides explicit control over world format
+/// and metadata, making it suitable for GUI applications and programmatic usage.
+///
+/// # Fields
+///
+/// * `path` - Directory path where the world will be saved
+/// * `format` - World format (Java Anvil or Bedrock mcworld)
+/// * `level_name` - Display name for the world (shown in Minecraft menu)
+/// * `spawn_point` - Initial player spawn coordinates (x, z)
+///
+/// # Example
+///
+/// ```rust
+/// use std::path::PathBuf;
+///
+/// let options = GenerationOptions {
+///     path: PathBuf::from("/path/to/world"),
+///     format: WorldFormat::JavaAnvil,
+///     level_name: Some("My Custom World".to_string()),
+///     spawn_point: Some((100, 200)),
+/// };
+/// ```
 #[derive(Clone)]
 pub struct GenerationOptions {
     pub path: PathBuf,
@@ -28,6 +92,30 @@ pub struct GenerationOptions {
     pub spawn_point: Option<(i32, i32)>,
 }
 
+/// Generate a Minecraft world from processed OSM elements.
+///
+/// This is the main entry point for CLI-based world generation. It uses
+/// default settings suitable for Java Edition Minecraft worlds.
+///
+/// # Arguments
+///
+/// * `elements` - Vector of processed OSM elements (buildings, roads, etc.)
+/// * `xzbbox` - Bounding box in Minecraft coordinates
+/// * `llbbox` - Bounding box in geographic coordinates (used for spawn point)
+/// * `ground` - Ground/elevation data for terrain generation
+/// * `args` - CLI arguments controlling generation options
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success, or `Err(String)` with an error message on failure.
+///
+/// # Example
+///
+/// ```rust,no_run
+/// let (elements, xzbbox) = osm_parser::parse_osm_data(raw_data, bbox, 1.0, false);
+/// let ground = ground::generate_ground_data(&args);
+/// generate_world(elements, xzbbox, bbox, ground, &args).expect("World generation failed");
+/// ```
 pub fn generate_world(
     elements: Vec<ProcessedElement>,
     xzbbox: XZBBox,

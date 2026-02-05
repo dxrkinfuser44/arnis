@@ -74,3 +74,25 @@ pub fn emit_open_mcworld_file(path: &str) {
         }
     }
 }
+
+/// Emits a log message to the GUI console
+pub fn emit_log_message(level: &str, message: &str) {
+    if let Some(window) = get_main_window() {
+        use std::time::{SystemTime, UNIX_EPOCH};
+
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+
+        let payload = json!({
+            "level": level,
+            "message": message,
+            "timestamp": timestamp
+        });
+
+        if let Err(e) = window.emit("log-message", payload) {
+            eprintln!("Failed to emit log-message event: {}", e);
+        }
+    }
+}

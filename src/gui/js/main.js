@@ -921,7 +921,7 @@ function notifyWorldChanged() {
  */
 async function loadWorldMapData() {
   if (!worldPath) return;
-  
+
   try {
     const mapData = await invoke('gui_get_world_map_data', { worldPath: worldPath });
     if (mapData) {
@@ -932,3 +932,76 @@ async function loadWorldMapData() {
     console.error("Failed to load world map data:", error);
   }
 }
+
+// Console functions
+window.toggleConsole = function() {
+  const container = document.getElementById('console-container');
+  const toggle = document.getElementById('console-toggle');
+
+  if (container.style.display === 'none') {
+    container.style.display = 'block';
+    toggle.classList.add('open');
+  } else {
+    container.style.display = 'none';
+    toggle.classList.remove('open');
+  }
+};
+
+window.clearConsole = function() {
+  const consoleLog = document.getElementById('console-log');
+  consoleLog.innerHTML = '<div class="console-message info"><span class="console-time">--:--:--</span><span class="console-level">[INFO]</span><span class="console-text">Console cleared.</span></div>';
+};
+
+window.exportConsole = async function() {
+  const consoleLog = document.getElementById('console-log');
+  const messages = Array.from(consoleLog.querySelectorAll('.console-message'));
+  const logText = messages.map(msg => {
+    const time = msg.querySelector('.console-time')?.textContent || '--:--:--';
+    const level = msg.querySelector('.console-level')?.textContent || '[INFO]';
+    const text = msg.querySelector('.console-text')?.textContent || '';
+    return `${time} ${level} ${text}`;
+  }).join('\n');
+
+  try {
+    await invoke('gui_export_console_log', { logContent: logText });
+  } catch (error) {
+    console.error("Failed to export console log:", error);
+  }
+};
+
+function addConsoleMessage(level, message, timestamp) {
+  const consoleLog = document.getElementById('console-log');
+
+  // Format timestamp
+  const date = new Date(timestamp * 1000);
+  const timeStr = date.toLocaleTimeString('en-US', { hour12: false });
+
+  // Create message element
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `console-message ${level}`;
+  messageDiv.innerHTML = `
+    <span class="console-time">${timeStr}</span>
+    <span class="console-level">[${level.toUpperCase()}]</span>
+    <span class="console-text">${message}</span>
+  `;
+
+  consoleLog.appendChild(messageDiv);
+
+  // Auto-scroll to bottom
+  consoleLog.scrollTop = consoleLog.scrollHeight;
+
+  // Limit to 500 messages
+  const messages = consoleLog.querySelectorAll('.console-message');
+  if (messages.length > 500) {
+    messages[0].remove();
+  }
+}
+
+// Listen for log messages from backend
+if (window.__TAURI__) {
+  window.__TAURI__.event.listen('log-message', (event) => {
+    const { level, message, timestamp } = event.payload;
+    addConsoleMessage(level, message, timestamp);
+  });
+}
+

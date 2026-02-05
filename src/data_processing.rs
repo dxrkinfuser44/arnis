@@ -49,7 +49,10 @@ use crate::ground::Ground;
 use crate::info;
 use crate::map_renderer;
 use crate::osm_parser::ProcessedElement;
-use crate::progress::{emit_gui_progress_update, emit_map_preview_ready, emit_open_mcworld_file};
+use crate::progress::{
+    emit_gui_progress_update, emit_map_preview_ready, emit_open_mcworld_file,
+    emit_performance_metrics,
+};
 #[cfg(feature = "gui")]
 use crate::telemetry::{send_log, LogLevel};
 use crate::urban_ground;
@@ -59,6 +62,7 @@ use crate::world_editor::{WorldEditor, WorldFormat};
 use indicatif::{ProgressBar, ProgressStyle};
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::Instant;
 
 pub const MIN_Y: i32 = -64;
 
@@ -147,6 +151,8 @@ pub fn generate_world_with_options(
     let output_path = options.path.clone();
     let world_format = options.format;
 
+    let generation_start = Instant::now();
+
     // Create editor with appropriate format
     let mut editor: WorldEditor = WorldEditor::new_with_format_and_name(
         options.path,
@@ -168,6 +174,7 @@ pub fn generate_world_with_options(
 
     info!("[5/7] Processing terrain layers");
     emit_gui_progress_update(25.0, "Processing terrain...");
+    let terrain_start = Instant::now();
 
     // Pre-compute all flood fills in parallel for better CPU utilization
     let _memory_guard = MemoryLimiter::global().guard();
@@ -186,6 +193,9 @@ pub fn generate_world_with_options(
     };
 
     // Process all elements (no longer need to partition boundaries)
+    // PERFORMANCE NOTE: For datasets with 100K+ elements, this sequential loop can take 15-30 minutes.
+    // Current design ensures correct layering (processing order matters for block override logic).
+    // Future optimization: Group independent elements by type and process types in batches.
     let elements_count: usize = elements.len();
     let process_pb: ProgressBar = ProgressBar::new(elements_count as u64);
     process_pb.set_style(ProgressStyle::default_bar()
@@ -374,6 +384,9 @@ pub fn generate_world_with_options(
 
     process_pb.finish();
 
+    let terrain_elapsed = terrain_start.elapsed().as_secs_f64();
+    emit_performance_metrics("Terrain Processing", terrain_elapsed, None);
+
     // Compute urban ground lookup (if enabled)
     // Uses a compact cell-based representation instead of storing all coordinates.
     // Memory usage: ~270 KB vs ~560 MB for coordinate-based approach.
@@ -397,6 +410,7 @@ pub fn generate_world_with_options(
 
     info!("[6/7] Generating ground");
     emit_gui_progress_update(70.0, "Generating ground...");
+    let ground_gen_start = Instant::now();
 
     let ground_pb: ProgressBar = ProgressBar::new(total_blocks);
     ground_pb.set_style(
@@ -417,6 +431,12 @@ pub fn generate_world_with_options(
     // Process ground generation chunk-by-chunk for better cache locality.
     // This keeps the same region/chunk HashMap entries hot in CPU cache,
     // rather than jumping between regions on every Z iteration.
+    //
+    // PERFORMANCE NOTE: For extra-large areas (>50km²), this loop processes millions of blocks.
+    // Potential optimizations for future work:
+    // 1. Parallelize chunk processing with rayon (4-8x speedup on multi-core)
+    // 2. Batch block writes to reduce HashMap overhead
+    // 3. Progressive saving to reduce peak memory usage
     let min_chunk_x = xzbbox.min_x() >> 4;
     let max_chunk_x = xzbbox.max_x() >> 4;
     let min_chunk_z = xzbbox.min_z() >> 4;
@@ -505,8 +525,16 @@ pub fn generate_world_with_options(
     ground_pb.inc(block_counter % batch_size);
     ground_pb.finish();
 
+    let ground_elapsed = ground_gen_start.elapsed().as_secs_f64();
+    emit_performance_metrics("Ground Generation", ground_elapsed, None);
+
     // Save world
+    info!("[7/7] Saving world");
+    emit_gui_progress_update(90.0, "Saving world...");
+    let save_start = Instant::now();
     editor.save();
+    let save_elapsed = save_start.elapsed().as_secs_f64();
+    emit_performance_metrics("World Save", save_elapsed, None);
 
     info!("[7/7] Finalizing world");
     emit_gui_progress_update(99.0, "Finalizing world...");
@@ -545,6 +573,10 @@ pub fn generate_world_with_options(
             emit_open_mcworld_file(path_str);
         }
     }
+
+    let total_elapsed = generation_start.elapsed().as_secs_f64();
+    emit_performance_metrics("Total Generation", total_elapsed, None);
+    info!("World generation completed in {:.2} seconds", total_elapsed);
 
     Ok(output_path)
 }

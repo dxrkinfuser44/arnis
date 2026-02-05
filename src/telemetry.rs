@@ -144,6 +144,13 @@ impl LogLevel {
 
 /// Sends a log entry to the telemetry server
 pub fn send_log(level: LogLevel, message: &str) {
+    // Always emit to GUI console if running with GUI
+    #[cfg(feature = "gui")]
+    {
+        use crate::progress::emit_log_message;
+        emit_log_message(level.as_str(), message);
+    }
+
     // Check user consent
     if !get_telemetry_consent() {
         return;

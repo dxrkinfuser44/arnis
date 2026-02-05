@@ -149,6 +149,29 @@
             <li>Plan spawn point markers in the map before launching generation.</li>
           </ul>
         </div>
+
+        <div class="card console-card">
+          <div class="card-header console-header" onclick="toggleConsole()">
+            <div>
+              <p class="eyebrow">System Console</p>
+              <h3>View logs and error messages</h3>
+            </div>
+            <span class="console-toggle" id="console-toggle">▼</span>
+          </div>
+          <div class="console-container" id="console-container" style="display: none;">
+            <div class="console-actions">
+              <button type="button" class="console-btn" onclick="clearConsole()">Clear</button>
+              <button type="button" class="console-btn" onclick="exportConsole()">Export</button>
+            </div>
+            <div class="console-log" id="console-log">
+              <div class="console-message info">
+                <span class="console-time">--:--:--</span>
+                <span class="console-level">[INFO]</span>
+                <span class="console-text">Console initialized. Messages will appear here.</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </article>
     </section>
 

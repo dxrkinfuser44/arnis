@@ -74,3 +74,47 @@ pub fn emit_open_mcworld_file(path: &str) {
         }
     }
 }
+
+/// Emits a log message to the GUI console
+pub fn emit_log_message(level: &str, message: &str) {
+    if let Some(window) = get_main_window() {
+        use std::time::{SystemTime, UNIX_EPOCH};
+
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+
+        let payload = json!({
+            "level": level,
+            "message": message,
+            "timestamp": timestamp
+        });
+
+        if let Err(e) = window.emit("log-message", payload) {
+            eprintln!("Failed to emit log-message event: {}", e);
+        }
+    }
+}
+
+/// Emits performance metrics to the GUI
+#[cfg(feature = "gui")]
+pub fn emit_performance_metrics(stage: &str, elapsed_secs: f64, memory_mb: Option<f64>) {
+    if let Some(window) = get_main_window() {
+        let payload = json!({
+            "stage": stage,
+            "elapsed_secs": elapsed_secs,
+            "memory_mb": memory_mb
+        });
+
+        if let Err(e) = window.emit("performance-metrics", payload) {
+            eprintln!("Failed to emit performance-metrics event: {}", e);
+        }
+    }
+}
+
+/// No-op version for non-GUI builds
+#[cfg(not(feature = "gui"))]
+pub fn emit_performance_metrics(_stage: &str, _elapsed_secs: f64, _memory_mb: Option<f64>) {
+    // Do nothing for CLI-only builds
+}

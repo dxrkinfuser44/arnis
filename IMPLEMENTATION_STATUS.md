@@ -4,6 +4,8 @@
 
 After careful analysis of the problem statement and codebase, I've identified which requirements are feasible with minimal modifications and which require extensive architectural changes.
 
+> Scope note: This PR is intentionally analysis-only. Implementing distributed processing, full chunk refactors, and UI overhauls will require a dedicated multi-week project and are not included here.
+
 ## Requirements Assessment
 
 ### ✅ Completed: Performance Analysis & Documentation

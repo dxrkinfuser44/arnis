@@ -49,7 +49,10 @@ use crate::ground::Ground;
 use crate::info;
 use crate::map_renderer;
 use crate::osm_parser::ProcessedElement;
-use crate::progress::{emit_gui_progress_update, emit_map_preview_ready, emit_open_mcworld_file, emit_performance_metrics};
+use crate::progress::{
+    emit_gui_progress_update, emit_map_preview_ready, emit_open_mcworld_file,
+    emit_performance_metrics,
+};
 #[cfg(feature = "gui")]
 use crate::telemetry::{send_log, LogLevel};
 use crate::urban_ground;

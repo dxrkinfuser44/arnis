@@ -98,6 +98,7 @@ pub fn emit_log_message(level: &str, message: &str) {
 }
 
 /// Emits performance metrics to the GUI
+#[cfg(feature = "gui")]
 pub fn emit_performance_metrics(stage: &str, elapsed_secs: f64, memory_mb: Option<f64>) {
     if let Some(window) = get_main_window() {
         let payload = json!({
@@ -110,4 +111,10 @@ pub fn emit_performance_metrics(stage: &str, elapsed_secs: f64, memory_mb: Optio
             eprintln!("Failed to emit performance-metrics event: {}", e);
         }
     }
+}
+
+/// No-op version for non-GUI builds
+#[cfg(not(feature = "gui"))]
+pub fn emit_performance_metrics(_stage: &str, _elapsed_secs: f64, _memory_mb: Option<f64>) {
+    // Do nothing for CLI-only builds
 }

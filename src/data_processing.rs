@@ -186,6 +186,9 @@ pub fn generate_world_with_options(
     };
 
     // Process all elements (no longer need to partition boundaries)
+    // PERFORMANCE NOTE: For datasets with 100K+ elements, this sequential loop can take 15-30 minutes.
+    // Current design ensures correct layering (processing order matters for block override logic).
+    // Future optimization: Group independent elements by type and process types in batches.
     let elements_count: usize = elements.len();
     let process_pb: ProgressBar = ProgressBar::new(elements_count as u64);
     process_pb.set_style(ProgressStyle::default_bar()
@@ -417,6 +420,12 @@ pub fn generate_world_with_options(
     // Process ground generation chunk-by-chunk for better cache locality.
     // This keeps the same region/chunk HashMap entries hot in CPU cache,
     // rather than jumping between regions on every Z iteration.
+    //
+    // PERFORMANCE NOTE: For extra-large areas (>50km²), this loop processes millions of blocks.
+    // Potential optimizations for future work:
+    // 1. Parallelize chunk processing with rayon (4-8x speedup on multi-core)
+    // 2. Batch block writes to reduce HashMap overhead
+    // 3. Progressive saving to reduce peak memory usage
     let min_chunk_x = xzbbox.min_x() >> 4;
     let max_chunk_x = xzbbox.max_x() >> 4;
     let min_chunk_z = xzbbox.min_z() >> 4;

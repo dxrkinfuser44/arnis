@@ -1003,5 +1003,13 @@ if (window.__TAURI__) {
     const { level, message, timestamp } = event.payload;
     addConsoleMessage(level, message, timestamp);
   });
+
+  window.__TAURI__.event.listen('performance-metrics', (event) => {
+    const { stage, elapsed_secs, memory_mb } = event.payload;
+    const perfMsg = memory_mb
+      ? `${stage}: ${elapsed_secs.toFixed(2)}s (${memory_mb.toFixed(1)}MB)`
+      : `${stage}: ${elapsed_secs.toFixed(2)}s`;
+    addConsoleMessage('info', perfMsg, Math.floor(Date.now() / 1000));
+  });
 }
 

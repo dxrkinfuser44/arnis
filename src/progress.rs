@@ -96,3 +96,18 @@ pub fn emit_log_message(level: &str, message: &str) {
         }
     }
 }
+
+/// Emits performance metrics to the GUI
+pub fn emit_performance_metrics(stage: &str, elapsed_secs: f64, memory_mb: Option<f64>) {
+    if let Some(window) = get_main_window() {
+        let payload = json!({
+            "stage": stage,
+            "elapsed_secs": elapsed_secs,
+            "memory_mb": memory_mb
+        });
+
+        if let Err(e) = window.emit("performance-metrics", payload) {
+            eprintln!("Failed to emit performance-metrics event: {}", e);
+        }
+    }
+}
